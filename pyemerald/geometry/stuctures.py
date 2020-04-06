@@ -157,3 +157,14 @@ class Surface:
         out_string += vertex_string
         out_string += '\n'
         return out_string
+
+
+@dataclass()
+class OutputVariable:
+    variable_name: str
+    instance_key: str
+
+
+@dataclass()
+class OutputMeter:
+    meter_name: str

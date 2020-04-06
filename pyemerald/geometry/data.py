@@ -1,4 +1,17 @@
-from pyemerald.geometry.stuctures import *
+from typing import List
+
+from pyemerald.geometry.stuctures import (
+    BoundaryConditionType,
+    Construction,
+    Material,
+    OutputMeter,
+    OutputVariable,
+    Surface,
+    SurfaceType,
+    Vertex2D,
+    Vertex3D,
+    Zone,
+)
 
 
 class DataManager:
@@ -375,6 +388,20 @@ class DataManager:
                 self.v_10
             ])
         )
+        self.output_variables = [
+            OutputVariable('Site Outdoor Air DryBulb Temperature', '*'),
+            OutputVariable('Site Daylight Saving Time Status', '*'),
+            OutputVariable('Site Day Type Index', '*'),
+            OutputVariable('Zone Mean Air Temperature', '*'),
+            OutputVariable('Zone Mean Radiant Temperature', '*'),
+            OutputVariable('Surface Inside Face Temperature', '*'),
+            OutputVariable('Surface Outside Face Temperature', '*'),
+            OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
+        ]
+        self.output_meters = [
+            OutputMeter('EnergyTransfer:Facility',),
+            OutputMeter('Electricity:Facility'),
+        ]
 
     def surface_string(self) -> str:
         all_surfaces = [
@@ -456,7 +483,7 @@ class DataManager:
         return """
   Version, 9.3;
 
-  Timestep, 4;
+  TimeStep, 4;
 
   Building,
     25095 Emerald Way,       !- Name
@@ -465,8 +492,8 @@ class DataManager:
     0.5,                     !- Loads Convergence Tolerance Value {W}
     0.05,                    !- Temperature Convergence Tolerance Value {deltaC}
     MinimalShadowing,        !- Solar Distribution
-    25,                      !- Maximum Number of Warmup Days
-    3;                       !- Minimum Number of Warmup Days
+    25,                      !- Maximum Number of WarmUp Days
+    3;                       !- Minimum Number of WarmUp Days
 
   HeatBalanceAlgorithm, ConductionTransferFunction;
 
@@ -514,9 +541,9 @@ class DataManager:
  RunPeriodControl:DaylightSavingTime,
    2nd Sunday in March,    !- StartDate
    2nd Sunday in November;    !- EndDate
-   
+
  SizingPeriod:DesignDay,
-  Oklahoma City Will Rogers Wor Ann Htg 99.6% Condns DB,     !- Name
+  Oklahoma City Will Rogers Wor Ann Htg 99.6% Conditions DB,     !- Name
           1,      !- Month
          21,      !- Day of Month
   WinterDesignDay,!- Day Type
@@ -524,8 +551,8 @@ class DataManager:
         0.0,      !- Daily Dry-Bulb Temperature Range {C}
  DefaultMultipliers, !- Dry-Bulb Temperature Range Modifier Type
            ,      !- Dry-Bulb Temperature Range Modifier Schedule Name
-    Wetbulb,      !- Humidity Condition Type
-      -11.4,      !- Wetbulb at Maximum Dry-Bulb {C}
+    WetBulb,      !- Humidity Condition Type
+      -11.4,      !- WetBulb at Maximum Dry-Bulb {C}
            ,      !- Humidity Indicating Day Schedule Name
            ,      !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
            ,      !- Enthalpy at Maximum Dry-Bulb {J/kg}
@@ -539,12 +566,12 @@ class DataManager:
   ASHRAEClearSky, !- Solar Model Indicator
            ,      !- Beam Solar Day Schedule Name
            ,      !- Diffuse Solar Day Schedule Name
-           ,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
-           ,      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+           ,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (tau_b)
+           ,      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (tau_d)
        0.00;      !- Clearness {0.0 to 1.1}
-       
+
  SizingPeriod:DesignDay,
-  Oklahoma City Will Rogers Wor Ann Clg .4% Condns DB=>MWB,     !- Name
+  Oklahoma City Will Rogers Wor Ann Clg .4% Conditions DB=>MWB,     !- Name
           7,      !- Month
          21,      !- Day of Month
   SummerDesignDay,!- Day Type
@@ -552,8 +579,8 @@ class DataManager:
        11.7,      !- Daily Dry-Bulb Temperature Range {C}
  DefaultMultipliers, !- Dry-Bulb Temperature Range Modifier Type
            ,      !- Dry-Bulb Temperature Range Modifier Schedule Name
-    Wetbulb,      !- Humidity Condition Type
-       23.4,      !- Wetbulb at Maximum Dry-Bulb {C}
+    WetBulb,      !- Humidity Condition Type
+       23.4,      !- WetBulb at Maximum Dry-Bulb {C}
            ,      !- Humidity Indicating Day Schedule Name
            ,      !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
            ,      !- Enthalpy at Maximum Dry-Bulb {J/kg}
@@ -567,51 +594,10 @@ class DataManager:
        ASHRAETau, !- Solar Model Indicator
            ,      !- Beam Solar Day Schedule Name
            ,      !- Diffuse Solar Day Schedule Name
-      0.426,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
-      2.214;      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
-     
+      0.426,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (tau_b)
+      2.214;      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (tau_d)
+
         \n"""
-
-    @staticmethod
-    def footer_data_string() -> str:
-        return """
-  Output:Variable,*,Site Outdoor Air Drybulb Temperature,hourly;
-
-  Output:Variable,*,Site Daylight Saving Time Status,hourly;
-
-  Output:Variable,*,Site Day Type Index,hourly;
-
-  Output:Variable,*,Zone Mean Air Temperature,hourly;
-
-  Output:Variable,*,Zone Mean Radiant Temperature,hourly;
-
-  Output:Variable,*,Surface Inside Face Temperature,hourly;
-
-  Output:Variable,*,Surface Outside Face Temperature,hourly;
-
-  Output:Variable,*,Surface Outside Face Sunlit Fraction,hourly;
-
-  Output:VariableDictionary,IDF;
-
-  Output:Surfaces:Drawing,dxf:wireframe;
-
-  Output:Constructions,Constructions;
-
-  Output:Meter:MeterFileOnly,EnergyTransfer:Building,monthly;
-
-  Output:Meter:MeterFileOnly,EnergyTransfer:Facility,monthly;
-
-  Output:Meter:MeterFileOnly,Electricity:Facility,monthly;
-  
-  OutputControl:Table:Style,
-    ALL;                     !- Column Separator
-
-  Output:Table:SummaryReports,
-    AllSummary;              !- Report 1 Name
-
-  Output:Diagnostics,DisplayExtrawarnings;
-
-        """
 
     @staticmethod
     def hvac_data_string() -> str:
@@ -640,7 +626,7 @@ class DataManager:
     CoolingSetpoint,
     AnyNumber,
     23.9;
-    
+
 ThermostatSetpoint:DualSetpoint,
   Thermostat Dual SP Control,                              !- Name
   HeatingSetpoint,                                         !- Heating Setpoint Temperature Schedule Name
@@ -758,7 +744,7 @@ AirLoopHVAC:UnitaryHeatPump:AirToAir,
   Coil:Heating:Electric,                                   !- Supplemental Heating Coil Object Type
   HeatPump Sup Heat Coil,                                  !- Supplemental Heating Coil Name
   40,                                                !- Maximum Supply Air Temperature from Supplemental Heater
-  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Heater Operation
+  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Htr
   BlowThrough,                                             !- Fan Placement
   HVACTemplate-Always 0;                                   !- Supply Air Fan Operating Mode Schedule Name
 
@@ -780,16 +766,16 @@ Coil:Heating:DX:SingleSpeed,
   HeatPump Cooling Coil Outlet,                            !- Air Inlet Node Name
   HeatPump Heating Coil Outlet,                            !- Air Outlet Node Name
   HeatPump HP Heating Coil Cap-FT,                         !- Total Heating Capacity Function of Temperature Curve Name
-  HeatPump HP Heating Coil Cap-FF,                         !- Total Heating Capacity Function of Flow Fraction Curve Name
+  HeatPump HP Heating Coil Cap-FF,                        !- Total Heating Capacity Function of Flow Fraction Curve Name
   HeatPump HP Heating Coil EIR-FT,                         !- Energy Input Ratio Function of Temperature Curve Name
   HeatPump HP Heating Coil EIR-FF,                         !- Energy Input Ratio Function of Flow Fraction Curve Name
   HeatPump HP Heating Coil PLF,                            !- Part Load Fraction Correlation Curve Name
-  HeatPump HP Heating Coil DefrEIR-FT,                     !- Defrost Energy Input Ratio Function of Temperature Curve Name
-  -8,                                                      !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
+  HeatPump HP Heating Coil DefrostEIR-FT,               !- Defrost Energy Input Ratio Function of Temperature Curve Name
+  -8,                                               !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
   ,                                                        !- Outdoor Dry-Bulb Temperature to Turn On Compressor
-  5,                                                       !- Maximum Outdoor Dry-Bulb Temperature for Defrost Operation {C}
+  5,                                                  !- Maximum Outdoor Dry-Bulb Temperature for Defrost Operation {C}
   0,                                                       !- Crankcase Heater Capacity {W}
-  0,                                                       !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
+  0,                                          !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
   ReverseCycle,                                            !- Defrost Strategy
   Timed,                                                   !- Defrost Control
   0.058333,                                                !- Defrost Time Period Fraction
@@ -839,7 +825,7 @@ Curve:Quadratic,
   1.0;                                                     !- Maximum Value of x
 
 Curve:Biquadratic,
-  HeatPump HP Heating Coil DefrEIR-FT,                     !- Name
+  HeatPump HP Heating Coil DefrostEIR-FT,                     !- Name
   1,                                                       !- Coefficient1 Constant
   0,                                                       !- Coefficient2 x
   0,                                                       !- Coefficient3 x**2
@@ -871,13 +857,13 @@ Coil:Cooling:DX:SingleSpeed,
   HeatPump Supply Fan Outlet,                              !- Air Inlet Node Name
   HeatPump Cooling Coil Outlet,                            !- Air Outlet Node Name
   HeatPump Cool Coil Cap-FT,                               !- Total Cooling Capacity Function of Temperature Curve Name
-  HeatPump Cool Coil Cap-FF,                               !- Total Cooling Capacity Function of Flow Fraction Curve Name
+  HeatPump Cool Coil Cap-FF,                              !- Total Cooling Capacity Function of Flow Fraction Curve Name
   HeatPump Cool Coil EIR-FT,                               !- Energy Input Ratio Function of Temperature Curve Name
   HeatPump Cool Coil EIR-FF,                               !- Energy Input Ratio Function of Flow Fraction Curve Name
   HeatPump Cool Coil PLF,                                  !- Part Load Fraction Correlation Curve Name
-  ,                                                        !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
+  ,                                                 !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
   0,                                                       !- Nominal Time for Condensate Removal to Begin
-  0,                                                       !- Ratio of Initial Moisture Evaporation Rate and Steady State Latent Capacity
+  0,                                      !- Ratio of Initial Moisture Evaporation Rate and Steady State Latent Capacity
   0,                                                       !- Maximum Cycling Rate
   0,                                                       !- Latent Capacity Time Constant
   HeatPump Cooling Coil Condenser Inlet,                   !- Condenser Air Inlet Node Name
@@ -886,7 +872,7 @@ Coil:Cooling:DX:SingleSpeed,
   ,                                                        !- Evaporative Condenser Air Flow Rate
   0,                                                       !- Evaporative Condenser Pump Rated Power Consumption
   0,                                                       !- Crankcase Heater Capacity
-  10;                                                      !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation
+  10;                                             !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation
 
 Curve:Biquadratic,
 ! DOE-2.1E, COOL-CAP-FT for PTAC w/ SI temps
@@ -903,7 +889,7 @@ Curve:Biquadratic,
   46.11111;                                                !- Maximum Value of y
 
 Curve:Quadratic,
-! DOE-2.1E, RATED-CCAP-FFLOW for PTAC
+! DOE-2.1E, RATED-C CAP-F FLOW for PTAC
   HeatPump Cool Coil Cap-FF,                               !- Name
   0.8,                                                     !- Coefficient1 Constant
   0.2,                                                     !- Coefficient2 x
@@ -926,7 +912,7 @@ Curve:Biquadratic,
   46.11111;                                                !- Maximum Value of y
 
 Curve:Quadratic,
-! DOE-2.1E, RATED-CEIR-FFLOW for PTAC
+! DOE-2.1E, RATED-C EIR-F FLOW for PTAC
   HeatPump Cool Coil EIR-FF,                               !- Name
   1.1552,                                                  !- Coefficient1 Constant
   -0.1808,                                                 !- Coefficient2 x
@@ -969,3 +955,17 @@ SetpointManager:SingleZone:Cooling,
   HeatPump Air Loop Outlet;                                !- Setpoint Node or NodeList Name
 
         \n"""
+
+    def output_data_string(self) -> str:
+        output_string = ''
+        for ov in self.output_variables:
+            output_string += '  Output:Variable, %s, %s, hourly;\n' % (ov.instance_key, ov.variable_name)
+        for om in self.output_meters:
+            output_string += '  Output:Meter:MeterFileOnly, %s, monthly;\n' % om.meter_name
+        output_string += 'Output:VariableDictionary, IDF;'
+        output_string += 'Output:Surfaces:Drawing, DXF:WireFrame;'
+        output_string += 'Output:Constructions, Constructions;'
+        output_string += 'OutputControl:Table:Style, All;'
+        output_string += 'Output:Table:SummaryReports, AllSummary;'
+        output_string += 'Output:Diagnostics, DisplayExtraWarnings;'
+        return output_string

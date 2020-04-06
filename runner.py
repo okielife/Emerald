@@ -48,7 +48,7 @@ class Runner(distutils.cmd.Command):
         full_idf_string += d.construction_data_string()
         full_idf_string += d.surface_string()
         full_idf_string += d.hvac_data_string()
-        full_idf_string += d.footer_data_string()
+        full_idf_string += d.output_data_string()
         idf_run_dir = tempfile.mkdtemp(".idf")
         idf_path = os.path.join(idf_run_dir, 'emerald.idf')
         with open(idf_path, 'w') as f:
