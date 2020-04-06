@@ -26,9 +26,13 @@ class Runner(distutils.cmd.Command):
             file_name = 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64.tar.gz'
             url = 'https://github.com/NREL/EnergyPlus/releases/download/v9.3.0/%s' % file_name
             extract_dir = tempfile.mkdtemp()
-            _, headers = urllib.request.urlretrieve(url, os.path.join(extract_dir, file_name))
+            ep_tar_path = os.path.join(extract_dir, file_name)
+            _, headers = urllib.request.urlretrieve(url, ep_tar_path)
+            print("*Downloaded E+ to: " + ep_tar_path)
             extract_command = ['tar', '-xzf', file_name, '-C', extract_dir]
             check_call(extract_command, cwd=extract_dir)
+            print("*E+ extracted, contents of extract dir follow")
+            check_call(['ls'], cwd=extract_dir)
             ep_install_path = os.path.join(extract_dir, 'EnergyPlus-9-3-0')
 
         sys.path.insert(0, ep_install_path)

@@ -1,5 +1,7 @@
 # Emerald
 
+[![Documentation Status](https://readthedocs.org/projects/emeraldmodeling/badge/?version=master)](https://emeraldmodeling.readthedocs.io/en/master/?badge=master)
+
 This repo will store a variety of things related to my house modeling effort.  Folders include:
 - docs: Sphinx-based docs that are to be built by ReadTheDocs, should cover all this work.
 - energyplus: This is a sort of "bin" directory, where it will contain an updated version of the IDF and EPW files, among other built up resources.
