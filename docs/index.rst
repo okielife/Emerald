@@ -17,6 +17,7 @@ Here are some things we've done so far:
 Still to do:
 
  - On Travis, it should download E+ 9.3 and run E+ through it.
+ - Add outputs as individual classes, separate out all boilerplate stuff
  - Lots of things.
 
 .. toctree::
