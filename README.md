@@ -1,7 +1,6 @@
 # Emerald
 
 This repo will store a variety of things related to my house modeling effort.  Folders include:
-- energyplus: This is the EnergyPlus specifics, the IDF input file, the EPW weather file, any other stuff.
-- geometry: This includes the canon geometry for the house, including DXF files and other resources.
-- pyemerald: As a part of this work I'm sure I'll end up making a bunch of Python code, it goes here, probably.
-- web: This is a Django website which will eventually show off the model really nicely, including showing renderings, results, etc.
+- docs: Sphinx-based docs that are to be built by ReadTheDocs, should cover all this work.
+- energyplus: This is a sort of "bin" directory, where it will contain an updated version of the IDF and EPW files, among other built up resources.
+- pyemerald: There are a bunch of different areas of data being processed as a part of this, including weather data, geometry, schedules, validation data, and many others.  Python code related to mining/processing this data lives here.  The code that actually creates the final IDF and EPW files lives in here.

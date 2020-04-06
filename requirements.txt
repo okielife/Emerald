@@ -1,5 +1,6 @@
 bs4
+django
 numpy
 requests
 soupsieve
-django
+sphinx
