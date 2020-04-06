@@ -32,10 +32,9 @@ class Runner(distutils.cmd.Command):
             extract_command = ['tar', '-xzf', file_name, '-C', extract_dir]
             check_call(extract_command, cwd=extract_dir)
             print("*E+ extracted, contents of extract dir follow")
-            tar_extract_dir = os.path.join(extract_dir, 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64')
+            ep_install_path = os.path.join(extract_dir, 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64')
             print("*Now moving into the extracted dir, we get:")
-            check_call(['ls'], cwd=tar_extract_dir)
-            ep_install_path = os.path.join(tar_extract_dir, 'EnergyPlus-9-3-0')
+            check_call(['ls'], cwd=ep_install_path)
 
         sys.path.insert(0, ep_install_path)
         # noinspection PyUnresolvedReferences
