@@ -16,6 +16,7 @@ Here are some things we've done so far:
 
 Still to do:
 
+ - On Travis, it should download E+ 9.3 and run E+ through it.
  - Lots of things.
 
 .. toctree::
