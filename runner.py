@@ -25,6 +25,7 @@ class Runner(distutils.cmd.Command):
 
     def run(self):
         if os.path.exists("/eplus/installs/EnergyPlus-9-3-0/"):
+            # if I am running locally, just use my local install
             ep_install_path = "/eplus/installs/EnergyPlus-9-3-0/"
         else:
             file_name = 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64.tar.gz'
@@ -32,13 +33,9 @@ class Runner(distutils.cmd.Command):
             extract_dir = tempfile.mkdtemp()
             ep_tar_path = os.path.join(extract_dir, file_name)
             _, headers = urllib.request.urlretrieve(url, ep_tar_path)
-            print("*Downloaded E+ to: " + ep_tar_path)
             extract_command = ['tar', '-xzf', file_name, '-C', extract_dir]
             check_call(extract_command, cwd=extract_dir)
-            print("*E+ extracted, contents of extract dir follow")
             ep_install_path = os.path.join(extract_dir, 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64')
-            print("*Now moving into the extracted dir, we get:")
-            check_call(['ls'], cwd=ep_install_path)
 
         sys.path.insert(0, ep_install_path)
         # noinspection PyUnresolvedReferences
@@ -56,7 +53,6 @@ class Runner(distutils.cmd.Command):
         api = EnergyPlusAPI()
         print("Running in: " + idf_run_dir)
         api.runtime.run_energyplus(['-w', str(WeatherManager.path_to_tmy_okc_epw_file()), '-d', idf_run_dir, idf_path])
-        # check_call(['/eplus/installs/EnergyPlus-9-3-0/PostProcess/ReadVarsESO'], cwd='/tmp')
 
         # get EnergyPlus outputs
         sql_file = os.path.join(idf_run_dir, 'eplusout.sql')

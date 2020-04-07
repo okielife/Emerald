@@ -1,4 +1,8 @@
+# PyCharm settings
 .idea
+
+# this is just a symlink to my local eplus install, purely for PyCharm convenience
+epinstall
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
