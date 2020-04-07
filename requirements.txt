@@ -1,2 +1,5 @@
+flake8
+gnuplotlib
+numpy
 requests
 sphinx
