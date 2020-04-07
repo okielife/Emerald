@@ -700,7 +700,9 @@ class Model:
         self._add_idf_object(
             'Coil:Cooling:DX:SingleSpeed',
             'HeatPump Cooling Coil', '', 14067, 0.7, 3, 0.755, '',
-            'HeatPump Supply Fan Outlet', 'HeatPump Cooling Coil Outlet', 'HeatPump Cool Coil Cap-FT', 'HeatPump Cool Coil Cap-FF', 'HeatPump Cool Coil EIR-FT', 'HeatPump Cool Coil EIR-FF', 'HeatPump Cool Coil PLF', '',
+            'HeatPump Supply Fan Outlet', 'HeatPump Cooling Coil Outlet', 'HeatPump Cool Coil Cap-FT',
+            'HeatPump Cool Coil Cap-FF', 'HeatPump Cool Coil EIR-FT', 'HeatPump Cool Coil EIR-FF',
+            'HeatPump Cool Coil PLF', '',
             0, 0, 0, 0, 'HeatPump Cooling Coil Condenser Inlet', 'AirCooled', 0, '', 0, 0, 10
         )
         self._add_idf_object(
