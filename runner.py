@@ -4,7 +4,11 @@ import tempfile
 import urllib.request
 from subprocess import check_call
 import sys
-from pyemerald.geometry.model import Model
+from pyemerald.model.model import Model
+from pyemerald.model.processor import OutputProcessor
+from pyemerald.validation.analyzer import ResultsAnalyzer
+from pyemerald.validation.usage import ValidationManager
+from pyemerald.weather.manager import WeatherManager
 
 
 class Runner(distutils.cmd.Command):
@@ -40,6 +44,7 @@ class Runner(distutils.cmd.Command):
         # noinspection PyUnresolvedReferences
         from pyenergyplus.api import EnergyPlusAPI
 
+        # build out the IDF first
         d = Model()
         full_idf_string = d.full_idf_string()
         idf_run_dir = tempfile.mkdtemp()
@@ -47,8 +52,24 @@ class Runner(distutils.cmd.Command):
         with open(idf_path, 'w') as f:
             f.write(full_idf_string)
 
+        # run the IDF using the EnergyPlus API (cool!)
         api = EnergyPlusAPI()
         print("Running in: " + idf_run_dir)
-        api.runtime.run_energyplus(['-d', idf_run_dir, '-D', idf_path])
-        # api.runtime.run_energyplus(['-w', '/eplus/epw/okc.epw', '-d', '/tmp/', '/tmp/test.idf'])
+        api.runtime.run_energyplus(['-w', str(WeatherManager.path_to_tmy_okc_epw_file()), '-d', idf_run_dir, idf_path])
         # check_call(['/eplus/installs/EnergyPlus-9-3-0/PostProcess/ReadVarsESO'], cwd='/tmp')
+
+        # get EnergyPlus outputs
+        sql_file = os.path.join(idf_run_dir, 'eplusout.sql')
+        op = OutputProcessor(sql_file)
+        print("EPLUS ELECTRICITY (kWh): ")
+        print(op.monthly_electricity)
+
+        # generate validation data
+        v = ValidationManager()
+        monthly_electricity = v.process_2019_raw_into_monthly()
+        print("ACTUAL ELECTRICITY (kWh): ")
+        print(monthly_electricity)
+
+        # need gnuplot installed on the machine for this:
+        r = ResultsAnalyzer(op.monthly_electricity, monthly_electricity)
+        r.plot_electricity()

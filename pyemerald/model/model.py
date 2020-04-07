@@ -1,6 +1,6 @@
 from typing import List
 
-from pyemerald.geometry.stuctures import (
+from pyemerald.model.stuctures import (
     BoundaryConditionType,
     Construction,
     Material,
@@ -884,12 +884,13 @@ SetpointManager:SingleZone:Cooling,
             output_string += '  Output:Variable, %s, %s, hourly;\n' % (ov.instance_key, ov.variable_name)
         for om in self.output_meters:
             output_string += '  Output:Meter:MeterFileOnly, %s, monthly;\n' % om.meter_name
-        output_string += 'Output:VariableDictionary, IDF;'
-        output_string += 'Output:Surfaces:Drawing, DXF:WireFrame;'
-        output_string += 'Output:Constructions, Constructions;'
-        output_string += 'OutputControl:Table:Style, All;'
-        output_string += 'Output:Table:SummaryReports, AllSummary;'
-        output_string += 'Output:Diagnostics, DisplayExtraWarnings;'
+        output_string += 'Output:VariableDictionary, IDF;\n'
+        output_string += 'Output:Surfaces:Drawing, DXF:WireFrame;\n'
+        output_string += 'Output:Constructions, Constructions;\n'
+        output_string += 'OutputControl:Table:Style, All;\n'
+        output_string += 'Output:Table:SummaryReports, AllSummary;\n'
+        output_string += 'Output:SQLite, SimpleAndTabular;\n'
+        output_string += 'Output:Diagnostics, DisplayExtraWarnings;\n'
         return output_string
 
     def full_idf_string(self) -> str:
