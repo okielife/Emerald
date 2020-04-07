@@ -4,7 +4,7 @@ import tempfile
 import urllib.request
 from subprocess import check_call
 import sys
-from pyemerald.geometry.data import DataManager
+from pyemerald.geometry.data import Model
 
 
 class Runner(distutils.cmd.Command):
@@ -40,16 +40,9 @@ class Runner(distutils.cmd.Command):
         # noinspection PyUnresolvedReferences
         from pyenergyplus.api import EnergyPlusAPI
 
-        d = DataManager()
-        full_idf_string = ''
-        full_idf_string += d.header_data_string()
-        full_idf_string += d.zone_data_string()
-        full_idf_string += d.material_data_string()
-        full_idf_string += d.construction_data_string()
-        full_idf_string += d.surface_string()
-        full_idf_string += d.hvac_data_string()
-        full_idf_string += d.output_data_string()
-        idf_run_dir = tempfile.mkdtemp(".idf")
+        d = Model()
+        full_idf_string = d.full_idf_string()
+        idf_run_dir = tempfile.mkdtemp()
         idf_path = os.path.join(idf_run_dir, 'emerald.idf')
         with open(idf_path, 'w') as f:
             f.write(full_idf_string)

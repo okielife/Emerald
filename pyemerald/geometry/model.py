@@ -14,7 +14,7 @@ from pyemerald.geometry.stuctures import (
 )
 
 
-class DataManager:
+class Model:
 
     @staticmethod
     def _build_wall_vertices(vertex_a: Vertex2D, vertex_b: Vertex2D, ceiling_height: float) -> List[Vertex3D]:
@@ -403,7 +403,7 @@ class DataManager:
             OutputMeter('Electricity:Facility'),
         ]
 
-    def surface_string(self) -> str:
+    def build_surface_string(self) -> str:
         all_surfaces = [
             self.surface_main_bath_exterior_wall_west,
             self.surface_dax_exterior_wall_south,
@@ -451,13 +451,13 @@ class DataManager:
             surface_string += s.to_idf()
         return surface_string
 
-    def zone_data_string(self) -> str:
+    def build_zone_string(self) -> str:
         zone_string = ''
         zone_string += self.zone_conditioned.to_idf()
         zone_string += self.zone_garage.to_idf()
         return zone_string
 
-    def material_data_string(self) -> str:
+    def build_constructions_string(self) -> str:
         material_string = ''
         material_string += self.material_brick.to_idf()
         material_string += self.material_sheathing.to_idf()
@@ -467,140 +467,62 @@ class DataManager:
         material_string += self.material_roof_insulation.to_idf()
         material_string += self.material_concrete.to_idf()
         material_string += self.material_wood_floor.to_idf()
-        return material_string
-
-    def construction_data_string(self) -> str:
-        construction_string = ''
+        construction_string = '\n'
         construction_string += self.construction_exterior_wall.to_idf()
         construction_string += self.construction_insulated_partition_wall.to_idf()
         construction_string += self.construction_floor.to_idf()
         construction_string += self.construction_roof.to_idf()
         construction_string += self.construction_garage_floor.to_idf()
-        return construction_string
+        return material_string + construction_string
 
     @staticmethod
-    def header_data_string() -> str:
-        return """
-  Version, 9.3;
-
-  TimeStep, 4;
-
-  Building,
-    25095 Emerald Way,       !- Name
-    0,                       !- North Axis {deg}
-    Suburbs,                 !- Terrain
-    0.5,                     !- Loads Convergence Tolerance Value {W}
-    0.05,                    !- Temperature Convergence Tolerance Value {deltaC}
-    MinimalShadowing,        !- Solar Distribution
-    25,                      !- Maximum Number of WarmUp Days
-    3;                       !- Minimum Number of WarmUp Days
-
-  HeatBalanceAlgorithm, ConductionTransferFunction;
-
-  SurfaceConvectionAlgorithm:Inside, TARP;
-
-  SurfaceConvectionAlgorithm:Outside, DOE-2;
-
-  SimulationControl,
-    No,                      !- Do Zone Sizing Calculation
-    No,                      !- Do System Sizing Calculation
-    No,                      !- Do Plant Sizing Calculation
-    No,                      !- Run Simulation for Sizing Periods
-    Yes;                     !- Run Simulation for Weather File Run Periods
-
-  RunPeriod,
-    Run Period 1,            !- Name
-    1,                       !- Begin Month
-    1,                       !- Begin Day of Month
-    2020,                    !- Begin Year
-    12,                      !- End Month
-    31,                      !- End Day of Month
-    2020,                    !- End Year
-    ,                        !- Day of Week for Start Day
-    Yes,                     !- Use Weather File Holidays and Special Days
-    Yes,                     !- Use Weather File Daylight Saving Period
-    No,                      !- Apply Weekend Holiday Rule
-    Yes,                     !- Use Weather File Rain Indicators
-    Yes;                     !- Use Weather File Snow Indicators
-
- Site:Location,
-    Cashion OK 73016,        !- Location Name
-    35.798,                  !- Latitude {N+ S-}
-    -97.679,                 !- Longitude {W- E+}
-    -6.00,                   !- Time Zone Relative to GMT {GMT+/-}
-    396.00;                  !- Elevation {m}
-
-  Site:GroundTemperature:BuildingSurface,
-    19.527, 19.502, 19.536, 19.598, 20.002, 21.640, 22.225, 22.375, 21.449, 20.121, 19.802, 19.633;
-
-  GlobalGeometryRules,
-    UpperLeftCorner,         !- Starting Vertex Position
-    CounterClockWise,        !- Vertex Entry Direction
-    World;                   !- Coordinate System
-
- RunPeriodControl:DaylightSavingTime,
-   2nd Sunday in March,    !- StartDate
-   2nd Sunday in November;    !- EndDate
-
- SizingPeriod:DesignDay,
-  Oklahoma City Will Rogers Wor Ann Htg 99.6% Conditions DB,     !- Name
-          1,      !- Month
-         21,      !- Day of Month
-  WinterDesignDay,!- Day Type
-      -11.4,      !- Maximum Dry-Bulb Temperature {C}
-        0.0,      !- Daily Dry-Bulb Temperature Range {C}
- DefaultMultipliers, !- Dry-Bulb Temperature Range Modifier Type
-           ,      !- Dry-Bulb Temperature Range Modifier Schedule Name
-    WetBulb,      !- Humidity Condition Type
-      -11.4,      !- WetBulb at Maximum Dry-Bulb {C}
-           ,      !- Humidity Indicating Day Schedule Name
-           ,      !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
-           ,      !- Enthalpy at Maximum Dry-Bulb {J/kg}
-           ,      !- Daily Wet-Bulb Temperature Range {deltaC}
-     96634.,      !- Barometric Pressure {Pa}
-        6.1,      !- Wind Speed {m/s} design conditions vs. traditional 6.71 m/s (15 mph)
-          0,      !- Wind Direction {Degrees; N=0, S=180}
-         No,      !- Rain {Yes/No}
-         No,      !- Snow on ground {Yes/No}
-         No,      !- Daylight Savings Time Indicator
-  ASHRAEClearSky, !- Solar Model Indicator
-           ,      !- Beam Solar Day Schedule Name
-           ,      !- Diffuse Solar Day Schedule Name
-           ,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (tau_b)
-           ,      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (tau_d)
-       0.00;      !- Clearness {0.0 to 1.1}
-
- SizingPeriod:DesignDay,
-  Oklahoma City Will Rogers Wor Ann Clg .4% Conditions DB=>MWB,     !- Name
-          7,      !- Month
-         21,      !- Day of Month
-  SummerDesignDay,!- Day Type
-       37.5,      !- Maximum Dry-Bulb Temperature {C}
-       11.7,      !- Daily Dry-Bulb Temperature Range {C}
- DefaultMultipliers, !- Dry-Bulb Temperature Range Modifier Type
-           ,      !- Dry-Bulb Temperature Range Modifier Schedule Name
-    WetBulb,      !- Humidity Condition Type
-       23.4,      !- WetBulb at Maximum Dry-Bulb {C}
-           ,      !- Humidity Indicating Day Schedule Name
-           ,      !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
-           ,      !- Enthalpy at Maximum Dry-Bulb {J/kg}
-           ,      !- Daily Wet-Bulb Temperature Range {deltaC}
-     96634.,      !- Barometric Pressure {Pa}
-        5.5,      !- Wind Speed {m/s} design conditions vs. traditional 3.35 m/s (7mph)
-        170,      !- Wind Direction {Degrees; N=0, S=180}
-         No,      !- Rain {Yes/No}
-         No,      !- Snow on ground {Yes/No}
-         No,      !- Daylight Savings Time Indicator
-       ASHRAETau, !- Solar Model Indicator
-           ,      !- Beam Solar Day Schedule Name
-           ,      !- Diffuse Solar Day Schedule Name
-      0.426,      !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (tau_b)
-      2.214;      !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (tau_d)
-
-        \n"""
+    def build_simulation_settings_string() -> str:
+        settings_string = ''
+        settings_string += '  Version, 9.3;\n'
+        settings_string += '  TimeStep, 4;\n'
+        settings_string += '  Building,\n'
+        settings_string += '    25095 Emerald Way, !- Name\n'
+        settings_string += '    0,                 !- North Axis {deg}\n'
+        settings_string += '    Country,           !- Terrain\n'
+        settings_string += '    0.5, 0.05,         !- Convergence Tolerance Valued {W}, {deltaC}\n'
+        settings_string += '    MinimalShadowing,  !- Solar Distribution\n'
+        settings_string += '    6,                 !- Maximum Number of WarmUp Days\n'
+        settings_string += '    2;                 !- Minimum Number of WarmUp Days\n'
+        settings_string += '  SimulationControl,\n'
+        settings_string += '    No, No, No, !- Zone, Sys, Plant Sizing\n'
+        settings_string += '    Yes, !- Run for Sizing Periods\n'
+        settings_string += '    Yes; !- Run for Run Periods\n'
+        settings_string += '  GlobalGeometryRules,\n'
+        settings_string += '    UpperLeftCorner, CounterClockwise, World;\n'
+        settings_string += '  RunPeriod,\n'
+        settings_string += '    Year 2020 Run Period,\n'
+        settings_string += '    1, 1, 2020, !- Beginning Date\n'
+        settings_string += '    12, 31, 2020, !- Ending Date\n'
+        settings_string += '    , !- Day of Week for Start Day\n'
+        settings_string += '    Yes, Yes, No, Yes, Yes; !- Holiday, DST, Weekend, Rain, Snow\n'
+        settings_string += '  RunPeriodControl:DaylightSavingTime,\n'
+        settings_string += '    2nd Sunday in March, 2nd Sunday in November;\n'
+        return settings_string
 
     @staticmethod
-    def hvac_data_string() -> str:
+    def build_location_string() -> str:
+        location_string = ''
+        location_string += '  Site:Location,\n'
+        location_string += '    Cashion, 35.798, -97.679, -6, 396;\n'
+        location_string += '  Site:GroundTemperature:BuildingSurface,\n'
+        location_string += '    19.53, 19.50, 19.54, 19.60, 20.00, 21.64, 22.23, 22.38, 21.45, 20.12, 19.80, 19.63;'
+        location_string += '  SizingPeriod:DesignDay,\n'
+        location_string += '    Winter Sizing Period,\n'
+        location_string += '    1, 21, WinterDesignDay, -11.4, 0.0, DefaultMultipliers, , WetBulb, -11.4,\n'
+        location_string += '    , , , , 96634, 6.1, 0, No, No, No, ASHRAEClearSky, , , , , 0.0;\n'
+        location_string += '  SizingPeriod:DesignDay,\n'
+        location_string += '    Summer Sizing Period,\n'
+        location_string += '    7, 21, SummerDesignDay, 37.5, 11.7, DefaultMultipliers, , WetBulb, 23.4,\n'
+        location_string += '    , , , , 96634, 5.5, 170, No, No, No, ASHRAETau, , , 0.426, 2.214;\n'
+        return location_string
+
+    @staticmethod
+    def build_hvac_string() -> str:
         return """
 
   ScheduleTypeLimits,
@@ -956,7 +878,7 @@ SetpointManager:SingleZone:Cooling,
 
         \n"""
 
-    def output_data_string(self) -> str:
+    def build_output_string(self) -> str:
         output_string = ''
         for ov in self.output_variables:
             output_string += '  Output:Variable, %s, %s, hourly;\n' % (ov.instance_key, ov.variable_name)
@@ -969,3 +891,14 @@ SetpointManager:SingleZone:Cooling,
         output_string += 'Output:Table:SummaryReports, AllSummary;'
         output_string += 'Output:Diagnostics, DisplayExtraWarnings;'
         return output_string
+
+    def full_idf_string(self) -> str:
+        idf_string = ''
+        idf_string += self.build_simulation_settings_string()
+        idf_string += self.build_location_string()
+        idf_string += self.build_zone_string()
+        idf_string += self.build_constructions_string()
+        idf_string += self.build_surface_string()
+        idf_string += self.build_hvac_string()
+        idf_string += self.build_output_string()
+        return idf_string
