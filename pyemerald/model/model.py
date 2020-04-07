@@ -33,11 +33,54 @@ class Model:
             return_vertices.append(Vertex3D(vertex, height))
         return return_vertices
 
-    def __init__(self):
+    def _add_idf_object(self, object_name: str, *object_data):
+        if len(object_data) == 0:
+            self.idf_string += '  ' + object_name + ';\n'
+        else:
+            self.idf_string += '  ' + object_name + ',\n'
+            for i, f in enumerate(object_data):
+                if i+1 == len(object_data):
+                    self.idf_string += '    ' + str(f) + ';\n'
+                else:
+                    self.idf_string += '    ' + str(f) + ',\n'
+        self.idf_string += '\n'
+
+    def _setup_settings(self):
+        self._add_idf_object('Version', 9.3)
+        self._add_idf_object('TimeStep', 4)
+        self._add_idf_object('Building', 'EmeraldWay', 0, 'Country', 0.5, 0.05, 'MinimalShadowing', 6, 2)
+        self._add_idf_object('SimulationControl', 'No', 'No', 'No', 'Yes', 'Yes')
+        self._add_idf_object('GlobalGeometryRules', 'UpperLeftCorner', 'CounterClockwise', 'World')
+        self._add_idf_object('RunPeriod', 'Year 2020', 1, 1, 2020, 12, 31, 2020, '', 'Yes', 'Yes', 'No', 'Yes', 'Yes')
+        self._add_idf_object('RunPeriodControl:DaylightSavingTime', '2nd Sunday in March', '2nd Sunday in November')
+
+    def _setup_location(self):
+        self._add_idf_object('Site:Location', 'Cashion', 35.798, -97.679, -6, 396)
+        self._add_idf_object(
+            'Site:GroundTemperature:BuildingSurface',
+            19.53, 19.50, 19.54, 19.60, 20.00, 21.64, 22.23, 22.38, 21.45, 20.12, 19.80, 19.63
+        )
+        self._add_idf_object(
+            'SizingPeriod:DesignDay',
+            'Winter Sizing Period', 1, 21, 'WinterDesignDay', -11.4, 0.0, 'DefaultMultipliers', '', 'WetBulb', -11.4,
+            '', '', '', '', 96634, 6.1, 0, 'No', 'No', 'No', 'ASHRAEClearSky', '', '', '', '', 0.0
+        )
+        self._add_idf_object(
+            'SizingPeriod:DesignDay',
+            'Summer Sizing Period', 7, 21, 'SummerDesignDay', 37.5, 11.7, 'DefaultMultipliers', '', 'WetBulb', 23.4,
+            '', '', '', '', 96634, 5.5, 170, 'No', 'No', 'No', 'ASHRAETau', '', '', 0.426, 2.214
+        )
+
+    def _setup_zones(self):
         # set up zones
         self.zone_conditioned = Zone("ConditionedSpace")
         self.zone_garage = Zone("Garage")
-        # set up materials
+        # write IDF
+        self._add_idf_object('Zone', self.zone_conditioned.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
+        self._add_idf_object('Zone', self.zone_garage.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
+
+    def _setup_materials(self):
+        # setup materials
         self.material_brick = Material('Brick', 0.11, 0.7, 1970, 800, 'Handbook 2017 - Brick, Building')
         self.material_sheathing = Material('Sheathing', 0.02, 0.09, 288, 1300, 'https://researchgate.net')
         self.material_wall_insulation = Material('R13Insulation', 0.09, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
@@ -46,6 +89,18 @@ class Model:
         self.material_roof_insulation = Material('R31Insulation', 0.21, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
         self.material_concrete = Material('6InchConcrete', 0.15, 1.73, 2242, 837, 'In IDF data-sets')
         self.material_wood_floor = Material('WoodFlooring', 0.15, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
+        # write IDF
+        all_materials = [
+            self.material_brick, self.material_sheathing, self.material_wall_insulation, self.material_gypsum,
+            self.material_shingles, self.material_roof_insulation, self.material_concrete, self.material_wood_floor
+        ]
+        for m in all_materials:
+            self._add_idf_object(
+                'Material',
+                m.name, 'MediumRough', m.thickness, m.thermal_conductivity, m.density, m.specific_heat, 0.9, 0.6, 0.6
+            )
+
+    def _setup_constructions(self):
         # set up constructions
         self.construction_exterior_wall = Construction('BrickWallConstruction', [
             self.material_brick, self.material_sheathing, self.material_wall_insulation, self.material_gypsum
@@ -60,6 +115,18 @@ class Model:
             self.material_concrete, self.material_wood_floor
         ])
         self.construction_garage_floor = Construction('GarageFloorConstruction', [self.material_concrete])
+        # write IDF
+        all_constructions = [
+            self.construction_exterior_wall,
+            self.construction_insulated_partition_wall,
+            self.construction_roof,
+            self.construction_floor,
+            self.construction_garage_floor
+        ]
+        for c in all_constructions:
+            self._add_idf_object('Construction', c.name, *[layer.name for layer in c.layers])
+
+    def _setup_floor_vertices(self):
         # set up vertices
         self.v_1 = Vertex2D('1', 28.3211, 43.5974)
         self.v_2 = Vertex2D('2', 29.631, 45.624)
@@ -96,6 +163,8 @@ class Model:
         self.v_34 = Vertex2D('34', 39.4716, 55.1688)
         self.v_35 = Vertex2D('35', 41.5036, 58.1914)
         self.v_36 = Vertex2D('36', 47.1678, 54.5592)
+
+    def _setup_surfaces(self):
         # set up surfaces
         ceiling_height = 3  # eventually we need to fine tune this
         self.surface_main_bath_exterior_wall_west = Surface(
@@ -388,22 +457,6 @@ class Model:
                 self.v_10
             ])
         )
-        self.output_variables = [
-            OutputVariable('Site Outdoor Air DryBulb Temperature', '*'),
-            OutputVariable('Site Daylight Saving Time Status', '*'),
-            OutputVariable('Site Day Type Index', '*'),
-            OutputVariable('Zone Mean Air Temperature', '*'),
-            OutputVariable('Zone Mean Radiant Temperature', '*'),
-            OutputVariable('Surface Inside Face Temperature', '*'),
-            OutputVariable('Surface Outside Face Temperature', '*'),
-            OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
-        ]
-        self.output_meters = [
-            OutputMeter('EnergyTransfer:Facility',),
-            OutputMeter('Electricity:Facility'),
-        ]
-
-    def build_surface_string(self) -> str:
         all_surfaces = [
             self.surface_main_bath_exterior_wall_west,
             self.surface_dax_exterior_wall_south,
@@ -446,460 +499,246 @@ class Model:
             self.surface_floor_conditioned_space,
             self.surface_floor_garage_space
         ]
-        surface_string = ''
         for s in all_surfaces:
-            surface_string += s.to_idf()
-        return surface_string
+            bc_instance_name = ''
+            if s.outdoor_bc_instance:
+                bc_instance_name = s.outdoor_bc_instance.name
+            sun_exposed_string = 'NoSun'
+            if s.sun_exposed:
+                sun_exposed_string = 'SunExposed'
+            wind_exposed_string = 'NoWind'
+            if s.wind_exposed:
+                wind_exposed_string = 'WindExposed'
+            vertex_list = []
+            for i, v in enumerate(s.vertices):
+                vertex_list.extend([v.part_2d.x, v.part_2d.y, v.height])
+            self._add_idf_object(
+                'BuildingSurface:Detailed',
+                s.name,
+                SurfaceType.to_building_surface_key_choice(s.surface_type),
+                s.construction.name, s.zone.name,
+                BoundaryConditionType.to_building_surface_key_choice(s.outdoor_bc_type), bc_instance_name,
+                sun_exposed_string, wind_exposed_string, s.view_factor_to_ground, len(s.vertices), *vertex_list
+            )
 
-    def build_zone_string(self) -> str:
-        zone_string = ''
-        zone_string += self.zone_conditioned.to_idf()
-        zone_string += self.zone_garage.to_idf()
-        return zone_string
-
-    def build_constructions_string(self) -> str:
-        material_string = ''
-        material_string += self.material_brick.to_idf()
-        material_string += self.material_sheathing.to_idf()
-        material_string += self.material_wall_insulation.to_idf()
-        material_string += self.material_gypsum.to_idf()
-        material_string += self.material_shingles.to_idf()
-        material_string += self.material_roof_insulation.to_idf()
-        material_string += self.material_concrete.to_idf()
-        material_string += self.material_wood_floor.to_idf()
-        construction_string = '\n'
-        construction_string += self.construction_exterior_wall.to_idf()
-        construction_string += self.construction_insulated_partition_wall.to_idf()
-        construction_string += self.construction_floor.to_idf()
-        construction_string += self.construction_roof.to_idf()
-        construction_string += self.construction_garage_floor.to_idf()
-        return material_string + construction_string
-
-    @staticmethod
-    def build_simulation_settings_string() -> str:
-        settings_string = ''
-        settings_string += '  Version, 9.3;\n'
-        settings_string += '  TimeStep, 4;\n'
-        settings_string += '  Building,\n'
-        settings_string += '    25095 Emerald Way, !- Name\n'
-        settings_string += '    0,                 !- North Axis {deg}\n'
-        settings_string += '    Country,           !- Terrain\n'
-        settings_string += '    0.5, 0.05,         !- Convergence Tolerance Valued {W}, {deltaC}\n'
-        settings_string += '    MinimalShadowing,  !- Solar Distribution\n'
-        settings_string += '    6,                 !- Maximum Number of WarmUp Days\n'
-        settings_string += '    2;                 !- Minimum Number of WarmUp Days\n'
-        settings_string += '  SimulationControl,\n'
-        settings_string += '    No, No, No, !- Zone, Sys, Plant Sizing\n'
-        settings_string += '    Yes, !- Run for Sizing Periods\n'
-        settings_string += '    Yes; !- Run for Run Periods\n'
-        settings_string += '  GlobalGeometryRules,\n'
-        settings_string += '    UpperLeftCorner, CounterClockwise, World;\n'
-        settings_string += '  RunPeriod,\n'
-        settings_string += '    Year 2020 Run Period,\n'
-        settings_string += '    1, 1, 2020, !- Beginning Date\n'
-        settings_string += '    12, 31, 2020, !- Ending Date\n'
-        settings_string += '    , !- Day of Week for Start Day\n'
-        settings_string += '    Yes, Yes, No, Yes, Yes; !- Holiday, DST, Weekend, Rain, Snow\n'
-        settings_string += '  RunPeriodControl:DaylightSavingTime,\n'
-        settings_string += '    2nd Sunday in March, 2nd Sunday in November;\n'
-        return settings_string
-
-    @staticmethod
-    def build_location_string() -> str:
-        location_string = ''
-        location_string += '  Site:Location,\n'
-        location_string += '    Cashion, 35.798, -97.679, -6, 396;\n'
-        location_string += '  Site:GroundTemperature:BuildingSurface,\n'
-        location_string += '    19.53, 19.50, 19.54, 19.60, 20.00, 21.64, 22.23, 22.38, 21.45, 20.12, 19.80, 19.63;'
-        location_string += '  SizingPeriod:DesignDay,\n'
-        location_string += '    Winter Sizing Period,\n'
-        location_string += '    1, 21, WinterDesignDay, -11.4, 0.0, DefaultMultipliers, , WetBulb, -11.4,\n'
-        location_string += '    , , , , 96634, 6.1, 0, No, No, No, ASHRAEClearSky, , , , , 0.0;\n'
-        location_string += '  SizingPeriod:DesignDay,\n'
-        location_string += '    Summer Sizing Period,\n'
-        location_string += '    7, 21, SummerDesignDay, 37.5, 11.7, DefaultMultipliers, , WetBulb, 23.4,\n'
-        location_string += '    , , , , 96634, 5.5, 170, No, No, No, ASHRAETau, , , 0.426, 2.214;\n'
-        return location_string
-
-    @staticmethod
-    def build_hvac_string() -> str:
-        return """
-
-  ScheduleTypeLimits,
-    Discrete,
-    0,
-    1,
-    Discrete;
-
-  ScheduleTypeLimits,
-    AnyNumber;
-
-  Schedule:Constant,
-    AlwaysOn,
-    Discrete,
-    1;
-
-  Schedule:Constant,
-    HeatingSetpoint,
-    AnyNumber,
-    21.1;
-
-  Schedule:Constant,
-    CoolingSetpoint,
-    AnyNumber,
-    23.9;
-
-ThermostatSetpoint:DualSetpoint,
-  Thermostat Dual SP Control,                              !- Name
-  HeatingSetpoint,                                         !- Heating Setpoint Temperature Schedule Name
-  CoolingSetpoint;                                         !- Cooling Setpoint Temperature Schedule Name
-
-Schedule:Compact,
-  HVACTemplate-Always 4,                                   !- Name
-  AnyNumber,                                 !- Schedule Type Limits Name
-  Through: 12/31,                                          !- Field 1
-  For: AllDays,                                            !- Field 2
-  Until: 24:00,                                            !- Field 3
-  4;                                                       !- Field 4
-
-ZoneControl:Thermostat,
-  ConditionedSpace Thermostat,                             !- Name
-  ConditionedSpace,                                        !- Zone or ZoneList Name
-  HVACTemplate-Always 4,                                   !- Control Type Schedule Name
-  ThermostatSetpoint:DualSetpoint,                         !- Control Object Type
-  Thermostat Dual SP Control;                              !- Control Name
-
-ZoneHVAC:EquipmentConnections,
-  ConditionedSpace,                                        !- Zone Name
-  ConditionedSpace Equipment,                              !- Zone Conditioning Equipment List Name
-  ConditionedSpace Supply Inlet,                           !- Zone Air Inlet Node or NodeList Name
-  ,                                                        !- Zone Air Exhaust Node or NodeList Name
-  ConditionedSpace Zone Air Node,                          !- Zone Air Node Name
-  ConditionedSpace Return Outlet;                          !- Zone Return Air Node Name
-
-ZoneHVAC:EquipmentList,
-  ConditionedSpace Equipment,                              !- Name
-  SequentialLoad,                                          !- Load Distribution Scheme
-  ZoneHVAC:AirDistributionUnit,                            !- Zone Equipment Object Type
-  ConditionedSpace ATU,                                    !- Zone Equipment Name
-  1,                                                       !- Zone Equipment Cooling Sequence
-  1,                                                       !- Zone Equipment Heating or No-Load Sequence
-  ,                                                        !- Zone Equipment Sequential Cooling Fraction Schedule Name
-  ;                                                        !- Zone Equipment Sequential Heating Fraction Schedule Name
-
-ZoneHVAC:AirDistributionUnit,
-  ConditionedSpace ATU,                                    !- Name
-  ConditionedSpace Supply Inlet,                           !- Air Distribution Unit Outlet Node Name
-  AirTerminal:SingleDuct:ConstantVolume:NoReheat,          !- Air Terminal Object Type
-  ConditionedSpace CV;                                     !- Air Terminal Name
-
-AirTerminal:SingleDuct:ConstantVolume:NoReheat,
-  ConditionedSpace CV,                                     !- Name
-  ,                                                        !- Availability Schedule Name
-  ConditionedSpace Zone Equip Inlet,                       !- Air Inlet Node Name
-  ConditionedSpace Supply Inlet,                           !- Air Outlet Node Name
-  0.755,                                                !- Maximum air flow rate {m3/s}
-  ,                                                        !- Design Specification Outdoor Air Object Name
-  ;                                                        !- Per Person Ventilation Rate Mode
-
-AirLoopHVAC,
-  HeatPump,                                                !- Name
-  ,                                                        !- Controller List Name
-  ,                          !- Availability Manager List Name
-  0.755,                                                !- Design Supply Air Flow Rate {m3/s}
-  HeatPump Branches,                                       !- Branch List Name
-  ,                                                        !- Connector List Name
-  HeatPump Air Loop Inlet,                                 !- Supply Side Inlet Node Name
-  HeatPump Return Air Outlet,                              !- Demand Side Outlet Node Name
-  HeatPump Supply Path Inlet,                              !- Demand Side Inlet Node Names
-  HeatPump Air Loop Outlet;                                !- Supply Side Outlet Node Names
-
-BranchList,
-  HeatPump Branches,                                       !- Name
-  HeatPump Main Branch;                                    !- Branch Name
-
-Branch,
-  HeatPump Main Branch,                                    !- Name
-  ,                                                        !- Pressure Drop Curve Name
-  AirLoopHVAC:UnitaryHeatPump:AirToAir,                    !- Component Object Type
-  HeatPump Heat Pump,                                      !- Component Name
-  HeatPump Air Loop Inlet,                               !- Component Inlet Node Name
-  HeatPump Air Loop Outlet;                                !- Component Outlet Node Name
-
-AirLoopHVAC:SupplyPath,
-  HeatPump Supply Path,                                    !- Name
-  HeatPump Supply Path Inlet,                              !- Supply Air Path Inlet Node Name
-  AirLoopHVAC:ZoneSplitter,                                !- Component Object Type
-  HeatPump Zone Splitter;                                  !- Component Name
-
-AirLoopHVAC:ZoneSplitter,
-  HeatPump Zone Splitter,                                  !- Name
-  HeatPump Supply Path Inlet,                              !- Inlet Node Name
-  ConditionedSpace Zone Equip Inlet;                       !- Outlet Node Name
-
-AirLoopHVAC:ReturnPath,
-  HeatPump Return Path,                                    !- Name
-  HeatPump Return Air Outlet,                              !- Return Air Path Outlet Node Name
-  AirLoopHVAC:ZoneMixer,                                   !- Component Object Type
-  HeatPump Zone Mixer;                                     !- Component Name
-
-AirLoopHVAC:ZoneMixer,
-  HeatPump Zone Mixer,                                     !- Name
-  HeatPump Return Air Outlet,                              !- Outlet Node Name
-  ConditionedSpace Return Outlet;                          !- Inlet Node Name
-
-AirLoopHVAC:UnitaryHeatPump:AirToAir,
-  HeatPump Heat Pump,                                      !- Name
-  ,                                                        !- Availability Schedule Name
-  HeatPump Air Loop Inlet,                               !- Air Inlet Node Name
-  HeatPump Air Loop Outlet,                                !- Air Outlet Node Name
-  0.755,                                                   !- Cooling Supply Air Flow Rate
-  0.755,                                                   !- Heating Supply Air Flow Rate
-  0.755,                                                   !- No Load Supply Air Flow Rate
-  ConditionedSpace,                                        !- Controlling Zone or Thermostat Location
-  Fan:OnOff,                                               !- Supply Air Fan Object Type
-  HeatPump Supply Fan,                                     !- Supply Air Fan Name
-  Coil:Heating:DX:SingleSpeed,                             !- Heating Coil Object Type
-  HeatPump HP Heating Coil,                                !- Heating Coil Name
-  Coil:Cooling:DX:SingleSpeed,                             !- Cooling Coil Object Type
-  HeatPump Cooling Coil,                                   !- Cooling Coil Name
-  Coil:Heating:Electric,                                   !- Supplemental Heating Coil Object Type
-  HeatPump Sup Heat Coil,                                  !- Supplemental Heating Coil Name
-  40,                                                !- Maximum Supply Air Temperature from Supplemental Heater
-  21,                                                      !- Maximum Outdoor Dry-Bulb Temperature for Supplemental Htr
-  BlowThrough,                                             !- Fan Placement
-  HVACTemplate-Always 0;                                   !- Supply Air Fan Operating Mode Schedule Name
-
-Schedule:Compact,
-  HVACTemplate-Always 0,                                   !- Name
-  AnyNumber,                                 !- Schedule Type Limits Name
-  Through: 12/31,                                          !- Field 1
-  For: AllDays,                                            !- Field 2
-  Until: 24:00,                                            !- Field 3
-  0;                                                       !- Field 4
-
-Coil:Heating:DX:SingleSpeed,
-  HeatPump HP Heating Coil,                                !- Name
-  ,                                                        !- Availability Schedule Name
-  14067,                                                   !- Rated Total Heating Capacity {W}
-  2.75,                                                    !- Rated COP
-  0.755,                                                   !- Rated Air Flow Rate {m3/s}
-  ,                                                        !- Rated Evaporator Fan Power Per Volume Flow Rate
-  HeatPump Cooling Coil Outlet,                            !- Air Inlet Node Name
-  HeatPump Heating Coil Outlet,                            !- Air Outlet Node Name
-  HeatPump HP Heating Coil Cap-FT,                         !- Total Heating Capacity Function of Temperature Curve Name
-  HeatPump HP Heating Coil Cap-FF,                        !- Total Heating Capacity Function of Flow Fraction Curve Name
-  HeatPump HP Heating Coil EIR-FT,                         !- Energy Input Ratio Function of Temperature Curve Name
-  HeatPump HP Heating Coil EIR-FF,                         !- Energy Input Ratio Function of Flow Fraction Curve Name
-  HeatPump HP Heating Coil PLF,                            !- Part Load Fraction Correlation Curve Name
-  HeatPump HP Heating Coil DefrostEIR-FT,               !- Defrost Energy Input Ratio Function of Temperature Curve Name
-  -8,                                               !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
-  ,                                                        !- Outdoor Dry-Bulb Temperature to Turn On Compressor
-  5,                                                  !- Maximum Outdoor Dry-Bulb Temperature for Defrost Operation {C}
-  0,                                                       !- Crankcase Heater Capacity {W}
-  0,                                          !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation {C}
-  ReverseCycle,                                            !- Defrost Strategy
-  Timed,                                                   !- Defrost Control
-  0.058333,                                                !- Defrost Time Period Fraction
-  1000;                                                !- Resistive Defrost Heater Capacity {W}
-
-Curve:Cubic,
-  HeatPump HP Heating Coil Cap-FT,                         !- Name
-  0.758746,                                                !- Coefficient1 Constant
-  0.027626,                                                !- Coefficient2 x
-  0.000148716,                                             !- Coefficient3 x**2
-  0.0000034992,                                            !- Coefficient4 x**3
-  -20.0,                                                   !- Minimum Value of x
-  20.0;                                                    !- Maximum Value of x
-
-Curve:Cubic,
-  HeatPump HP Heating Coil Cap-FF,                         !- Name
-  0.84,                                                    !- Coefficient1 Constant
-  0.16,                                                    !- Coefficient2 x
-  0.0,                                                     !- Coefficient3 x**2
-  0.0,                                                     !- Coefficient4 x**3
-  0.5,                                                     !- Minimum Value of x
-  1.5;                                                     !- Maximum Value of x
-
-Curve:Cubic,
-  HeatPump HP Heating Coil EIR-FT,                         !- Name
-  1.19248,                                                 !- Coefficient1 Constant
-  -0.0300438,                                              !- Coefficient2 x
-  0.00103745,                                              !- Coefficient3 x**2
-  -0.000023328,                                            !- Coefficient4 x**3
-  -20.0,                                                   !- Minimum Value of x
-  20.0;                                                    !- Maximum Value of x
-
-Curve:Quadratic,
-  HeatPump HP Heating Coil EIR-FF,                         !- Name
-  1.3824,                                                  !- Coefficient1 Constant
-  -0.4336,                                                 !- Coefficient2 x
-  0.0512,                                                  !- Coefficient3 x**2
-  0.0,                                                     !- Minimum Value of x
-  1.0;                                                     !- Maximum Value of x
-
-Curve:Quadratic,
-  HeatPump HP Heating Coil PLF,                            !- Name
-  0.75,                                                    !- Coefficient1 Constant
-  0.25,                                                    !- Coefficient2 x
-  0.0,                                                     !- Coefficient3 x**2
-  0.0,                                                     !- Minimum Value of x
-  1.0;                                                     !- Maximum Value of x
-
-Curve:Biquadratic,
-  HeatPump HP Heating Coil DefrostEIR-FT,                     !- Name
-  1,                                                       !- Coefficient1 Constant
-  0,                                                       !- Coefficient2 x
-  0,                                                       !- Coefficient3 x**2
-  0,                                                       !- Coefficient4 y
-  0,                                                       !- Coefficient5 y**2
-  0,                                                       !- Coefficient6 x*y
-  0,                                                       !- Minimum Value of x
-  50,                                                      !- Maximum Value of x
-  0,                                                       !- Minimum Value of y
-  50;                                                      !- Maximum Value of y
-
-Coil:Heating:Electric,
-  HeatPump Sup Heat Coil,                                  !- Name
-  ,                                                        !- Availability Schedule Name
-  1,                                                       !- Efficiency
-  10000,                                                   !- Nominal Capacity of the Coil {W}
-  HeatPump Heating Coil Outlet,                            !- Air Inlet Node Name
-  HeatPump Air Loop Outlet,                                !- Air Outlet Node Name
-  ;                                                        !- Coil Temp Setpoint Node
-
-Coil:Cooling:DX:SingleSpeed,
-  HeatPump Cooling Coil,                                   !- Name
-  ,                                                        !- Availability Schedule Name
-  14067,                                                   !- Gross Rated Total Cooling Capacity {W}
-  0.7,                                                     !- Gross Rated Sensible Heat Ratio
-  3,                                                       !- Rated COP
-  0.755,                                                   !- Rated Air Flow Rate {m3/s}
-  ,                                                        !- Rated Evaporator Fan Power per Volume Flow Rate {W/(m3/s)}
-  HeatPump Supply Fan Outlet,                              !- Air Inlet Node Name
-  HeatPump Cooling Coil Outlet,                            !- Air Outlet Node Name
-  HeatPump Cool Coil Cap-FT,                               !- Total Cooling Capacity Function of Temperature Curve Name
-  HeatPump Cool Coil Cap-FF,                              !- Total Cooling Capacity Function of Flow Fraction Curve Name
-  HeatPump Cool Coil EIR-FT,                               !- Energy Input Ratio Function of Temperature Curve Name
-  HeatPump Cool Coil EIR-FF,                               !- Energy Input Ratio Function of Flow Fraction Curve Name
-  HeatPump Cool Coil PLF,                                  !- Part Load Fraction Correlation Curve Name
-  ,                                                 !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
-  0,                                                       !- Nominal Time for Condensate Removal to Begin
-  0,                                      !- Ratio of Initial Moisture Evaporation Rate and Steady State Latent Capacity
-  0,                                                       !- Maximum Cycling Rate
-  0,                                                       !- Latent Capacity Time Constant
-  HeatPump Cooling Coil Condenser Inlet,                   !- Condenser Air Inlet Node Name
-  AirCooled,                                               !- Condenser Type
-  0,                                                       !- Evaporative Condenser Effectiveness
-  ,                                                        !- Evaporative Condenser Air Flow Rate
-  0,                                                       !- Evaporative Condenser Pump Rated Power Consumption
-  0,                                                       !- Crankcase Heater Capacity
-  10;                                             !- Maximum Outdoor Dry-Bulb Temperature for Crankcase Heater Operation
-
-Curve:Biquadratic,
-! DOE-2.1E, COOL-CAP-FT for PTAC w/ SI temps
-  HeatPump Cool Coil Cap-FT,                               !- Name
-  0.942587793,                                             !- Coefficient1 Constant
-  0.009543347,                                             !- Coefficient2 x
-  0.00068377,                                              !- Coefficient3 x**2
-  -0.011042676,                                            !- Coefficient4 y
-  0.000005249,                                             !- Coefficient5 y**2
-  -0.00000972,                                             !- Coefficient6 x*y
-  12.77778,                                                !- Minimum Value of x
-  23.88889,                                                !- Maximum Value of x
-  18.0,                                                    !- Minimum Value of y
-  46.11111;                                                !- Maximum Value of y
-
-Curve:Quadratic,
-! DOE-2.1E, RATED-C CAP-F FLOW for PTAC
-  HeatPump Cool Coil Cap-FF,                               !- Name
-  0.8,                                                     !- Coefficient1 Constant
-  0.2,                                                     !- Coefficient2 x
-  0,                                                       !- Coefficient3 x**2
-  0.5,                                                     !- Minimum Value of x
-  1.5;                                                     !- Maximum Value of x
-
-Curve:Biquadratic,
-! DOE-2.1E, COOL-EIR-FT for PTAC w/ SI temps
-  HeatPump Cool Coil EIR-FT,                               !- Name
-  0.342414409,                                             !- Coefficient1 Constant
-  0.034885008,                                             !- Coefficient2 x
-  -0.0006237,                                              !- Coefficient3 x**2
-  0.004977216,                                             !- Coefficient4 y
-  0.000437951,                                             !- Coefficient5 y**2
-  -0.000728028,                                            !- Coefficient6 x*y
-  12.77778,                                                !- Minimum Value of x
-  23.88889,                                                !- Maximum Value of x
-  18.0,                                                    !- Minimum Value of y
-  46.11111;                                                !- Maximum Value of y
-
-Curve:Quadratic,
-! DOE-2.1E, RATED-C EIR-F FLOW for PTAC
-  HeatPump Cool Coil EIR-FF,                               !- Name
-  1.1552,                                                  !- Coefficient1 Constant
-  -0.1808,                                                 !- Coefficient2 x
-  0.0256,                                                  !- Coefficient3 x**2
-  0.5,                                                     !- Minimum Value of x
-  1.5;                                                     !- Maximum Value of x
-
-Curve:Quadratic,
-! PLF = l.- Cd(1.-PLR) where Cd = 0.15
-  HeatPump Cool Coil PLF,                                  !- Name
-  0.85,                                                    !- Coefficient1 Constant
-  0.15,                                                    !- Coefficient2 x
-  0,                                                       !- Coefficient3 x**2
-  0,                                                       !- Minimum Value of x
-  1;                                                       !- Maximum Value of x
-
-OutdoorAir:Node,
-  HeatPump Cooling Coil Condenser Inlet,                   !- Name
-  -1;                                                      !- Height Above Ground
-
-Fan:OnOff,
-  HeatPump Supply Fan,                                     !- Name
-  AlwaysOn,                                                !- Availability Schedule Name
-  0.7,                                                     !- Fan Efficiency
-  600,                                                     !- Pressure Rise {Pa}
-  0.755,                                                !- Maximum Flow Rate {m3/s}
-  0.9,                                                     !- Motor Efficiency
-  1,                                                       !- Motor in Airstream Fraction
-  HeatPump Air Loop Inlet,                               !- Air Inlet Node Name
-  HeatPump Supply Fan Outlet;                              !- Air Outlet Node Name
-
-SetpointManager:SingleZone:Cooling,
-  HeatPump Economizer Supply Air Temp Manager,             !- Name
-  Temperature,                                             !- Control Variable
-  13,                                                      !- minimum supply air temperature {C}
-  45,                                                      !- maximum supply air temperature {C}
-  ConditionedSpace,                                        !- Control Zone Name
-  ConditionedSpace Zone Air Node,                          !- Zone Node Name
-  ConditionedSpace Supply Inlet,                           !- Zone Inlet Node Name
-  HeatPump Air Loop Outlet;                                !- Setpoint Node or NodeList Name
-
-        \n"""
-
-    def build_output_string(self) -> str:
-        output_string = ''
+    def _setup_outputs(self):
+        # setup outputs
+        self.output_variables = [
+            OutputVariable('Site Outdoor Air DryBulb Temperature', '*'),
+            OutputVariable('Site Daylight Saving Time Status', '*'),
+            OutputVariable('Site Day Type Index', '*'),
+            OutputVariable('Zone Mean Air Temperature', '*'),
+            OutputVariable('Zone Mean Radiant Temperature', '*'),
+            OutputVariable('Surface Inside Face Temperature', '*'),
+            OutputVariable('Surface Outside Face Temperature', '*'),
+            OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
+        ]
+        self.output_meters = [
+            OutputMeter('EnergyTransfer:Facility',),
+            OutputMeter('Electricity:Facility'),
+        ]
+        # write IDF
         for ov in self.output_variables:
-            output_string += '  Output:Variable, %s, %s, hourly;\n' % (ov.instance_key, ov.variable_name)
+            self._add_idf_object('Output:Variable', ov.instance_key, ov.variable_name, 'hourly')
         for om in self.output_meters:
-            output_string += '  Output:Meter:MeterFileOnly, %s, monthly;\n' % om.meter_name
-        output_string += 'Output:VariableDictionary, IDF;\n'
-        output_string += 'Output:Surfaces:Drawing, DXF:WireFrame;\n'
-        output_string += 'Output:Constructions, Constructions;\n'
-        output_string += 'OutputControl:Table:Style, All;\n'
-        output_string += 'Output:Table:SummaryReports, AllSummary;\n'
-        output_string += 'Output:SQLite, SimpleAndTabular;\n'
-        output_string += 'Output:Diagnostics, DisplayExtraWarnings;\n'
-        return output_string
+            self._add_idf_object('Output:Meter:MeterFileOnly', om.meter_name, 'monthly')
+        self._add_idf_object('Output:VariableDictionary', 'IDF')
+        self._add_idf_object('Output:Surfaces:Drawing', 'DXF:WireFrame')
+        self._add_idf_object('Output:Constructions', 'Constructions')
+        self._add_idf_object('OutputControl:Table:Style', 'All')
+        self._add_idf_object('Output:Table:SummaryReports', 'AllSummary')
+        self._add_idf_object('Output:SQLite', 'SimpleAndTabular')
+        self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings')
 
-    def full_idf_string(self) -> str:
-        idf_string = ''
-        idf_string += self.build_simulation_settings_string()
-        idf_string += self.build_location_string()
-        idf_string += self.build_zone_string()
-        idf_string += self.build_constructions_string()
-        idf_string += self.build_surface_string()
-        idf_string += self.build_hvac_string()
-        idf_string += self.build_output_string()
-        return idf_string
+    def __init__(self):
+        self.idf_string = ''
+        # order does matter here, materials need to be declared before constructions, etc.
+        self._setup_settings()
+        self._setup_location()
+        self._setup_schedules()
+        self._setup_internal_gains()
+        self._setup_zones()
+        self._setup_materials()
+        self._setup_constructions()
+        self._setup_floor_vertices()
+        self._setup_surfaces()
+        self._setup_hvac()
+        self._setup_outputs()
+
+    def _setup_schedules(self):
+        self._add_idf_object('ScheduleTypeLimits', 'Discrete', 0, 1, 'Discrete')
+        self._add_idf_object('ScheduleTypeLimits', 'AnyNumber')
+        self._add_idf_object('Schedule:Constant', 'AlwaysOn', 'Discrete', 1)
+        self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
+        self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
+        self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 4', 'AnyNumber', 4)
+        self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 0', 'AnyNumber', 0)
+
+    def _setup_internal_gains(self):
+        pass
+
+    def _setup_hvac(self):
+        self._add_idf_object(
+            'ThermostatSetpoint:DualSetpoint',
+            'Thermostat Dual SP Control', 'HeatingSetpoint', 'CoolingSetpoint'
+        )
+        self._add_idf_object(
+            'ZoneControl:Thermostat',
+            'ConditionedSpace Thermostat', 'ConditionedSpace', 'HVACTemplate-Always 4',
+            'ThermostatSetpoint:DualSetpoint', 'Thermostat Dual SP Control'
+        )
+        self._add_idf_object(
+            'ZoneHVAC:EquipmentConnections',
+            'ConditionedSpace', 'ConditionedSpace Equipment', 'ConditionedSpace Supply Inlet',
+            '', 'ConditionedSpace Zone Air Node', 'ConditionedSpace Return Outlet'
+        )
+        self._add_idf_object(
+            'ZoneHVAC:EquipmentList',
+            'ConditionedSpace Equipment', 'SequentialLoad', 'ZoneHVAC:AirDistributionUnit', 'ConditionedSpace ATU', 1, 1
+        )
+        self._add_idf_object(
+            'ZoneHVAC:AirDistributionUnit',
+            'ConditionedSpace ATU', 'ConditionedSpace Supply Inlet',
+            'AirTerminal:SingleDuct:ConstantVolume:NoReheat', 'ConditionedSpace CV'
+        )
+        self._add_idf_object(
+            'AirTerminal:SingleDuct:ConstantVolume:NoReheat',
+            'ConditionedSpace CV', '', 'ConditionedSpace Zone Equip Inlet', 'ConditionedSpace Supply Inlet', 0.755
+        )
+        self._add_idf_object(
+            'AirLoopHVAC',
+            'HeatPump', '', '', 0.755, 'HeatPump Branches', '', 'HeatPump Air Loop Inlet', 'HeatPump Return Air Outlet',
+            'HeatPump Supply Path Inlet', 'HeatPump Air Loop Outlet'
+        )
+        self._add_idf_object(
+            'BranchList',
+            'HeatPump Branches', 'HeatPump Main Branch'
+        )
+        self._add_idf_object(
+            'Branch',
+            'HeatPump Main Branch', '', 'AirLoopHVAC:UnitaryHeatPump:AirToAir', 'HeatPump Heat Pump',
+            'HeatPump Air Loop Inlet', 'HeatPump Air Loop Outlet'
+        )
+        self._add_idf_object(
+            'AirLoopHVAC:SupplyPath',
+            'HeatPump Supply Path', 'HeatPump Supply Path Inlet', 'AirLoopHVAC:ZoneSplitter', 'HeatPump Zone Splitter'
+        )
+        self._add_idf_object(
+            'AirLoopHVAC:ZoneSplitter',
+            'HeatPump Zone Splitter', 'HeatPump Supply Path Inlet', 'ConditionedSpace Zone Equip Inlet'
+        )
+        self._add_idf_object(
+            'AirLoopHVAC:ReturnPath',
+            'HeatPump Return Path', 'HeatPump Return Air Outlet', 'AirLoopHVAC:ZoneMixer', 'HeatPump Zone Mixer'
+        )
+        self._add_idf_object(
+            'AirLoopHVAC:ZoneMixer',
+            'HeatPump Zone Mixer', 'HeatPump Return Air Outlet', 'ConditionedSpace Return Outlet'
+        )
+        self._add_idf_object(
+            'AirLoopHVAC:UnitaryHeatPump:AirToAir',
+            'HeatPump Heat Pump', '', 'HeatPump Air Loop Inlet', 'HeatPump Air Loop Outlet', 0.755, 0.755, 0.755,
+            'ConditionedSpace',
+            'Fan:OnOff', 'HeatPump Supply Fan',
+            'Coil:Heating:DX:SingleSpeed', 'HeatPump HP Heating Coil',
+            'Coil:Cooling:DX:SingleSpeed', 'HeatPump Cooling Coil',
+            'Coil:Heating:Electric', 'HeatPump Sup Heat Coil',
+            40, 21, 'BlowThrough', 'HVACTemplate-Always 0'
+        )
+        self._add_idf_object(
+            'Coil:Heating:DX:SingleSpeed',
+            'HeatPump HP Heating Coil', '', 14067, 2.75, 0.755, '',
+            'HeatPump Cooling Coil Outlet', 'HeatPump Heating Coil Outlet',
+            'HeatPump HP Heating Coil Cap-FT', 'HeatPump HP Heating Coil Cap-FF', 'HeatPump HP Heating Coil EIR-FT',
+            'HeatPump HP Heating Coil EIR-FF', 'HeatPump HP Heating Coil PLF', 'HeatPump HP Heating Coil DefrostEIR-FT',
+            -8, '', 5, 0, 0, 'ReverseCycle', 'Timed', 0.058333, 1000
+        )
+        self._add_idf_object(
+            'Curve:Cubic',
+            'HeatPump HP Heating Coil Cap-FT',
+            0.758746, 0.027626, 0.000148716, 0.0000034992,
+            -20, 20
+        )
+        self._add_idf_object(
+            'Curve:Cubic',
+            'HeatPump HP Heating Coil Cap-FF',
+            0.84, 0.16, 0.0, 0.0,
+            0.5, 1.5
+        )
+        self._add_idf_object(
+            'Curve:Cubic',
+            'HeatPump HP Heating Coil EIR-FT',
+            1.19248, -0.0300438, 0.00103745, -0.000023328,
+            -20, 20
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HeatPump HP Heating Coil EIR-FF',
+            1.3824, -0.4336, 0.0512,
+            0.0, 1.0
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HeatPump HP Heating Coil PLF',
+            0.75, 0.25, 0.0,
+            0.0, 1.0
+        )
+        self._add_idf_object(
+            'Curve:Biquadratic',
+            'HeatPump HP Heating Coil DefrostEIR-FT',
+            1, 0, 0, 0, 0, 0, 0, 50, 0, 50
+        )
+        self._add_idf_object(
+            'Coil:Heating:Electric',
+            'HeatPump Sup Heat Coil', '', 1, 10000, 'HeatPump Heating Coil Outlet', 'HeatPump Air Loop Outlet'
+        )
+        self._add_idf_object(
+            'Coil:Cooling:DX:SingleSpeed',
+            'HeatPump Cooling Coil', '', 14067, 0.7, 3, 0.755, '',
+            'HeatPump Supply Fan Outlet', 'HeatPump Cooling Coil Outlet', 'HeatPump Cool Coil Cap-FT', 'HeatPump Cool Coil Cap-FF', 'HeatPump Cool Coil EIR-FT', 'HeatPump Cool Coil EIR-FF', 'HeatPump Cool Coil PLF', '',
+            0, 0, 0, 0, 'HeatPump Cooling Coil Condenser Inlet', 'AirCooled', 0, '', 0, 0, 10
+        )
+        self._add_idf_object(
+            'Curve:Biquadratic',
+            'HeatPump Cool Coil Cap-FT',
+            0.942587793, 0.009543347, 0.00068377, -0.011042676, 0.000005249, -0.00000972,
+            12.77778, 23.88889, 18.0, 46.11111
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HeatPump Cool Coil Cap-FF',
+            0.8, 0.2, 0.0,
+            0.5, 1.5
+        )
+        self._add_idf_object(
+            'Curve:Biquadratic',
+            'HeatPump Cool Coil EIR-FT',
+            0.342414409, 0.034885008, -0.0006237, 0.004977216, 0.000437951, -0.000728028,
+            12.77778, 23.88889, 18.0, 46.11111
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HeatPump Cool Coil EIR-FF',
+            1.1552, -0.1808, 0.0256,
+            0.5, 1.5
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HeatPump Cool Coil PLF',
+            0.85, 0.15, 0.0,
+            0.0, 1.0
+        )
+        self._add_idf_object(
+            'OutdoorAir:Node',
+            'HeatPump Cooling Coil Condenser Inlet', -1
+        )
+        self._add_idf_object(
+            'Fan:OnOff',
+            'HeatPump Supply Fan', 'AlwaysOn', 0.7, 600, 0.755, 0.9, 1,
+            'HeatPump Air Loop Inlet', 'HeatPump Supply Fan Outlet'
+        )
+        self._add_idf_object(
+            'SetpointManager:SingleZone:Cooling',
+            'HeatPump Economizer Supply Air Temp Manager', 'Temperature', 13, 45, 'ConditionedSpace',
+            'ConditionedSpace Zone Air Node', 'ConditionedSpace Supply Inlet', 'HeatPump Air Loop Outlet'
+        )

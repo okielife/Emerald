@@ -43,7 +43,7 @@ class Runner(distutils.cmd.Command):
 
         # build out the IDF first
         d = Model()
-        full_idf_string = d.full_idf_string()
+        full_idf_string = d.idf_string
         idf_run_dir = tempfile.mkdtemp()
         idf_path = os.path.join(idf_run_dir, 'emerald.idf')
         with open(idf_path, 'w') as f:
