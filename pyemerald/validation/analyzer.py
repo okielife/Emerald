@@ -25,4 +25,3 @@ class ResultsAnalyzer:
             (x, np.array(self.e_plus), {'with': 'lines', 'legend': 'EnergyPlus'}),
             terminal='dumb 120,25', unset='grid', title='Comparing E+ to Actual (RMSE = %s)' % r_m_s_e
         )
-        print("Root Mean Square Error: %f [kWh]" % r_m_s_e)
