@@ -4,7 +4,7 @@ import tempfile
 import urllib.request
 from subprocess import check_call
 import sys
-from pyemerald.geometry.data import Model
+from pyemerald.geometry.model import Model
 
 
 class Runner(distutils.cmd.Command):
