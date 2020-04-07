@@ -16,6 +16,22 @@ from pyemerald.model.stuctures import (
 
 class Model:
 
+    def __init__(self):
+        self.idf_string = ''
+        # order does matter here, materials need to be declared before constructions, etc.
+        self._setup_settings()
+        self._setup_location()
+        self._setup_schedules()
+        self._setup_internal_gains()
+        self._setup_zones()
+        self._setup_materials()
+        self._setup_constructions()
+        self._setup_floor_vertices()
+        self._setup_surfaces()
+        self._water_use()
+        self._setup_hvac()
+        self._setup_outputs()
+
     @staticmethod
     def _build_wall_vertices(vertex_a: Vertex2D, vertex_b: Vertex2D, ceiling_height: float) -> List[Vertex3D]:
         """The vertices should be given in clockwise order as you walk around the exterior of the space"""
@@ -550,21 +566,6 @@ class Model:
         self._add_idf_object('Output:SQLite', 'SimpleAndTabular')
         self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings')
 
-    def __init__(self):
-        self.idf_string = ''
-        # order does matter here, materials need to be declared before constructions, etc.
-        self._setup_settings()
-        self._setup_location()
-        self._setup_schedules()
-        self._setup_internal_gains()
-        self._setup_zones()
-        self._setup_materials()
-        self._setup_constructions()
-        self._setup_floor_vertices()
-        self._setup_surfaces()
-        self._setup_hvac()
-        self._setup_outputs()
-
     def _setup_schedules(self):
         self._add_idf_object('ScheduleTypeLimits', 'Discrete', 0, 1, 'Discrete')
         self._add_idf_object('ScheduleTypeLimits', 'AnyNumber')
@@ -575,6 +576,10 @@ class Model:
         self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 0', 'AnyNumber', 0)
 
     def _setup_internal_gains(self):
+        pass
+
+    def _water_use(self):
+        # water heater, water usage, etc
         pass
 
     def _setup_hvac(self):
