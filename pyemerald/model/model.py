@@ -610,7 +610,7 @@ class Model:
         #   Motor Full Load Amps: 6
         #   Static Pressure: 0.2 inH2O
         #
-        # AHRI:
+        # AHRI: https://www.ahridirectory.org/Search/SearchHome
         #   AHRI Certified Reference Number: 7835942
         #   Manufacturer Type: Systems
         #   AHRI Type: HRCU-A-CB

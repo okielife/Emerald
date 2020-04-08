@@ -39,7 +39,7 @@ class Runner(distutils.cmd.Command):
             check_call(extract_command, cwd=extract_dir)
             ep_install_path = extract_dir / 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64'
 
-        sys.path.insert(0, ep_install_path)
+        sys.path.insert(0, str(ep_install_path))
         # noinspection PyUnresolvedReferences
         from pyenergyplus.api import EnergyPlusAPI
 
