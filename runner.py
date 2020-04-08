@@ -1,9 +1,11 @@
+from datetime import datetime
 import distutils.cmd
 import os
-import tempfile
-import urllib.request
+from pathlib import Path
 from subprocess import check_call
 import sys
+import tempfile
+import urllib.request
 from pyemerald.model.model import Model
 from pyemerald.model.processor import OutputProcessor
 from pyemerald.validation.analyzer import ResultsAnalyzer
@@ -30,32 +32,42 @@ class Runner(distutils.cmd.Command):
         else:
             file_name = 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64.tar.gz'
             url = 'https://github.com/NREL/EnergyPlus/releases/download/v9.3.0/%s' % file_name
-            extract_dir = tempfile.mkdtemp()
-            ep_tar_path = os.path.join(extract_dir, file_name)
+            extract_dir = Path(tempfile.mkdtemp())
+            ep_tar_path = extract_dir / file_name
             _, headers = urllib.request.urlretrieve(url, ep_tar_path)
             extract_command = ['tar', '-xzf', file_name, '-C', extract_dir]
             check_call(extract_command, cwd=extract_dir)
-            ep_install_path = os.path.join(extract_dir, 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64')
+            ep_install_path = extract_dir / 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64'
 
         sys.path.insert(0, ep_install_path)
         # noinspection PyUnresolvedReferences
         from pyenergyplus.api import EnergyPlusAPI
 
-        # build out the IDF first
+        # set up a run dir
+        this_file_path = Path(os.path.realpath(__file__))
+        run_folder_name = datetime.now().strftime("%Y%m%d_%H%M%S")
+        idf_run_dir = this_file_path.parent / 'runs' / run_folder_name
+        os.makedirs(idf_run_dir)
+
+        # build out the IDF
         d = Model()
         full_idf_string = d.idf_string
-        idf_run_dir = tempfile.mkdtemp()
-        idf_path = os.path.join(idf_run_dir, 'emerald.idf')
+        idf_path = idf_run_dir / 'emerald.idf'
         with open(idf_path, 'w') as f:
             f.write(full_idf_string)
 
         # run the IDF using the EnergyPlus API (cool!)
         api = EnergyPlusAPI()
-        print("Running in: " + idf_run_dir)
-        api.runtime.run_energyplus(['-w', str(WeatherManager.path_to_tmy_okc_epw_file()), '-d', idf_run_dir, idf_path])
+        print("Running in: " + str(idf_run_dir))
+        return_val = api.runtime.run_energyplus(
+            ['-w', str(WeatherManager.path_to_tmy_okc_epw_file()), '-d', str(idf_run_dir), str(idf_path)]
+        )
+        if return_val != 0:
+            print("EnergyPlus failed - aborting")
+            exit(return_val)
 
         # get EnergyPlus outputs
-        sql_file = os.path.join(idf_run_dir, 'eplusout.sql')
+        sql_file = idf_run_dir / 'eplusout.sql'
         op = OutputProcessor(sql_file)
         print("EPLUS ELECTRICITY (kWh): ")
         print(op.monthly_electricity)

@@ -367,38 +367,40 @@ class Model:
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_32, self.v_1, ceiling_height))
         # now the ceilings/roofs - need to fix this up later
+        ceiling_vertex_list_ccw_from_above = [
+            self.v_32,
+            self.v_31,
+            self.v_30,
+            self.v_29,
+            self.v_28,
+            self.v_27,
+            self.v_26,
+            self.v_25,
+            self.v_24,
+            self.v_23,
+            self.v_22,
+            self.v_21,
+            self.v_20,
+            self.v_36,
+            self.v_35,
+            self.v_34,
+            self.v_10,
+            self.v_9,
+            self.v_8,
+            self.v_7,
+            self.v_6,
+            self.v_5,
+            self.v_4,
+            self.v_3,
+            self.v_2,
+            self.v_1
+        ]
+        ceiling_vertex_list_clockwise_from_above = ceiling_vertex_list_ccw_from_above[::-1]
         self.surface_ceiling_conditioned_space = Surface(
             'Conditioned Space Ceiling',
             self.zone_indoor, SurfaceType.ROOF, self.construction_roof,
             BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
-            self._add_height_to_vertices(ceiling_height, [
-                self.v_32,
-                self.v_31,
-                self.v_30,
-                self.v_29,
-                self.v_28,
-                self.v_27,
-                self.v_26,
-                self.v_25,
-                self.v_24,
-                self.v_23,
-                self.v_22,
-                self.v_21,
-                self.v_20,
-                self.v_36,
-                self.v_35,
-                self.v_34,
-                self.v_10,
-                self.v_9,
-                self.v_8,
-                self.v_7,
-                self.v_6,
-                self.v_5,
-                self.v_4,
-                self.v_3,
-                self.v_2,
-                self.v_1
-            ])
+            self._add_height_to_vertices(ceiling_height, ceiling_vertex_list_ccw_from_above)
         )
         self.surface_ceiling_garage_space = Surface(
             'Garage Ceiling',
@@ -424,34 +426,7 @@ class Model:
             'Conditioned Space Floor',
             self.zone_indoor, SurfaceType.FLOOR, self.construction_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
-            self._add_height_to_vertices(0.0, [
-                self.v_1,
-                self.v_2,
-                self.v_3,
-                self.v_4,
-                self.v_5,
-                self.v_6,
-                self.v_7,
-                self.v_8,
-                self.v_9,
-                self.v_10,
-                self.v_34,
-                self.v_35,
-                self.v_36,
-                self.v_20,
-                self.v_21,
-                self.v_22,
-                self.v_23,
-                self.v_24,
-                self.v_25,
-                self.v_26,
-                self.v_27,
-                self.v_28,
-                self.v_29,
-                self.v_30,
-                self.v_31,
-                self.v_32
-            ])
+            self._add_height_to_vertices(0.0, ceiling_vertex_list_clockwise_from_above)
         )
         self.surface_floor_garage_space = Surface(
             'Garage Floor',
@@ -541,13 +516,30 @@ class Model:
         # setup outputs
         self.output_variables = [
             OutputVariable('Site Outdoor Air DryBulb Temperature', '*'),
-            OutputVariable('Site Daylight Saving Time Status', '*'),
-            OutputVariable('Site Day Type Index', '*'),
+            OutputVariable('Site Wind Speed', '*'),
+            OutputVariable('Site Horizontal Infrared Radiation Rate per Area', '*'),
+            OutputVariable('Site Precipitation Depth', '*'),
+            # OutputVariable('Site Daylight Saving Time Status', '*'),
+            # OutputVariable('Site Day Type Index', '*'),
             OutputVariable('Zone Mean Air Temperature', '*'),
             OutputVariable('Zone Mean Radiant Temperature', '*'),
-            OutputVariable('Surface Inside Face Temperature', '*'),
-            OutputVariable('Surface Outside Face Temperature', '*'),
-            OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
+            OutputVariable('Zone Predicted Sensible Load to Setpoint Heat Transfer Rate', '*'),
+            OutputVariable('Zone Predicted Sensible Load to Heating Setpoint Heat Transfer Rate', '*'),
+            OutputVariable('Zone Predicted Sensible Load to Cooling Setpoint Heat Transfer Rate', '*'),
+            # OutputVariable('Surface Inside Face Temperature', '*'),
+            # OutputVariable('Surface Outside Face Temperature', '*'),
+            # OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
+            OutputVariable('Zone Thermostat Heating Setpoint Temperature', '*'),
+            OutputVariable('Zone Thermostat Cooling Setpoint Temperature', '*'),
+            OutputVariable('Zone Air Terminal Sensible Heating Energy', '*'),
+            OutputVariable('Zone Air Terminal Sensible Cooling Energy', '*'),
+            OutputVariable('Fan Air Mass Flow Rate', '*'),
+            OutputVariable('Cooling Coil Total Cooling Rate', '*'),
+            OutputVariable('Cooling Coil Sensible Cooling Rate', '*'),
+            OutputVariable('Cooling Coil Electric Power', '*'),
+            OutputVariable('Heating Coil Heating Rate', '*'),
+            OutputVariable('Heating Coil Electric Power', '*'),
+            OutputVariable('Schedule Value', '*'),
         ]
         self.output_meters = [
             OutputMeter('EnergyTransfer:Facility',),
@@ -564,16 +556,13 @@ class Model:
         self._add_idf_object('OutputControl:Table:Style', 'All')
         self._add_idf_object('Output:Table:SummaryReports', 'AllSummary')
         self._add_idf_object('Output:SQLite', 'SimpleAndTabular')
-        self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings')
+        self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings', 'DisplayUnusedSchedules')
 
     def _setup_schedules(self):
-        self._add_idf_object('ScheduleTypeLimits', 'Discrete', 0, 1, 'Discrete')
         self._add_idf_object('ScheduleTypeLimits', 'AnyNumber')
-        self._add_idf_object('Schedule:Constant', 'AlwaysOn', 'Discrete', 1)
         self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
         self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
         self._add_idf_object('Schedule:Constant', 'ScheduleDualSetPoint', 'AnyNumber', 4)
-        self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 0', 'AnyNumber', 0)
 
     def _setup_internal_gains(self):
         pass
@@ -583,6 +572,77 @@ class Model:
         pass
 
     def _setup_hvac(self):
+        # hvac unit is:
+        # Carrier Sentry - 4 Ton 14 SEER Residential Heat Pump Condensing Unit
+        # https://www.carrierenterprise.com/carrier-4-ton-14-seer-single-stage-heat-pump-condenser-with-puron-refrigerant-ch14nb04800g  # noqa: E501
+
+        # Outdoor Unit:
+        #   Model: CH14NB04800GAAAA
+        #   Serial: 4616X84977
+        #   Condenser Motor HP: 1/4 HP
+        #   Condenser Motor RPM: 1110
+        #   Condenser Motor Type: Permanent Split Compressor
+        #   Cooling Capacity: 46000
+        #   Cooling Capacity Range: 44500
+        #   Cooling Rated Capacity Btu/h: 48000
+        #   COP: 3.64-3.94
+        #   EER: 11.5-12.5
+        #   Full Load Amps: 1.45
+        #   Heating Capacity: 43500
+        #   HSPF: 8.2-9
+        #   Metering Device: TXV
+        #   Motor Type: Direct Drive
+        #   Phase: Single
+        #   Rated Load Amps: 19
+        #   Refrigerant: R-410a
+        #   Rows: 2
+        #   SEER: 14
+        #   Sound Level (dBA): 79
+        #   Stage: Single
+        #   Tonnage: 4
+        #   Voltage: 208-230 VAC
+        #
+        # Indoor Unit:
+        #   Heat Package In This Unit: KFCEH3101C15A
+        #   Model: FB4CNF048
+        #   Serial: 1516A83297
+        #   Motor HP: 0.75
+        #   Motor Full Load Amps: 6
+        #   Static Pressure: 0.2 inH2O
+        #
+        # AHRI:
+        #   AHRI Certified Reference Number: 7835942
+        #   Manufacturer Type: Systems
+        #   AHRI Type: HRCU-A-CB
+        #   Outdoor Unit Model Number: CARRIER  CH14NB048****A
+        #   Brand Name: CARRIER
+        #   Indoor Unit Model Number: FB4CNF048L+TXV
+        #   Cooling Capacity (A2) - Single or High Stage (95F),btuh: 45500
+        #   SEER: 14.00
+        #   EER (A2) (95F): 11.70
+        #   Heating Capacity (H12) - (47F),btuh: 44500
+        #   HSPF (Region IV): 8.20
+        #   Heating Capacity (H32) - (17F),btuh: 27800
+        #   Indoor Full-Load Air Volume Rate (A2 SCFM): 1400
+
+        # set up some system properties
+        system_air_volume_flow_rate_cfm = 1400  # CFM
+        rated_cooling_capacity_btu_h = 45500
+        rated_heating_capacity_btu_h = 44500
+        rated_heating_capacity_watts = rated_heating_capacity_btu_h * 0.29
+        rated_cooling_capacity_watts = rated_cooling_capacity_btu_h * 0.29
+        indoor_unit_static_pressure_inches = 0.2
+        static_pressure_pascals = indoor_unit_static_pressure_inches * 249
+        sys_vol_flow = system_air_volume_flow_rate_cfm * 0.00047194745
+        max_supply_temp_for_supplemental_heater = 40
+        seer_cooling_btu_per_watt = 14
+        cop_cooling = seer_cooling_btu_per_watt / 3.412
+        hspf_heating_btu_per_watt = 8.2
+        cop_heating = hspf_heating_btu_per_watt / 3.412
+        min_outdoor_temp_for_compressor = -8
+        rated_shr = 0.7  # assumed
+        supplemental_heater_capacity_watts = 10000  # assumed
+        defrost_time_period = 0.06
         self._add_idf_object(
             'ThermostatSetpoint:DualSetpoint',
             'ThermostatControl', 'HeatingSetpoint', 'CoolingSetpoint'
@@ -605,11 +665,11 @@ class Model:
         )
         self._add_idf_object(
             'AirTerminal:SingleDuct:ConstantVolume:NoReheat',
-            'AirTerminal', '', 'ZoneEquipmentInlet', 'ZoneSupplyAirNode', 0.755
+            'AirTerminal', '', 'ZoneEquipmentInlet', 'ZoneSupplyAirNode', sys_vol_flow
         )
         self._add_idf_object(
             'AirLoopHVAC',
-            'HeatPump', '', '', 0.755, 'Branches', '', 'AirLoopSupplyInlet', 'AirLoopDemandOutlet',
+            'HeatPump', '', '', sys_vol_flow, 'Branches', '', 'AirLoopSupplyInlet', 'AirLoopDemandOutlet',
             'AirLoopDemandInlet', 'AirLoopSupplyOutlet'
         )
         self._add_idf_object(
@@ -639,20 +699,20 @@ class Model:
         )
         self._add_idf_object(
             'AirLoopHVAC:UnitaryHeatPump:AirToAir',
-            'HeatPump', '', 'AirLoopSupplyInlet', 'AirLoopSupplyOutlet', 0.755, 0.755, 0.755,
+            'HeatPump', '', 'AirLoopSupplyInlet', 'AirLoopSupplyOutlet', sys_vol_flow, sys_vol_flow, sys_vol_flow,
             'Indoor',
             'Fan:OnOff', 'Fan',
             'Coil:Heating:DX:SingleSpeed', 'HeatingCoil',
             'Coil:Cooling:DX:SingleSpeed', 'CoolingCoil',
             'Coil:Heating:Electric', 'SupplementalCoil',
-            40, 21, 'BlowThrough', 'HVACTemplate-Always 0'
+            max_supply_temp_for_supplemental_heater,
         )
         self._add_idf_object(
             'Coil:Heating:DX:SingleSpeed',
-            'HeatingCoil', '', 14067, 2.75, 0.755, '',
+            'HeatingCoil', '', rated_heating_capacity_watts, cop_heating, sys_vol_flow, '',
             'CoolingCoilOutlet', 'HeatingCoilOutlet',
             'HtgCapFT', 'HtgCapFF', 'HtgEirFT', 'HtgEirFF', 'HtgPLF', 'HtgDefrostEirFT',
-            -8, '', 5, 0, 0, 'ReverseCycle', 'Timed', 0.058333, 1000
+            min_outdoor_temp_for_compressor, '', '', '', '', '', '', defrost_time_period
         )
         self._add_idf_object(
             'Curve:Cubic',
@@ -680,13 +740,13 @@ class Model:
         )
         self._add_idf_object(
             'Coil:Heating:Electric',
-            'SupplementalCoil', '', 1, 10000, 'HeatingCoilOutlet', 'AirLoopSupplyOutlet'
+            'SupplementalCoil', '', 1, supplemental_heater_capacity_watts, 'HeatingCoilOutlet', 'AirLoopSupplyOutlet'
         )
         self._add_idf_object(
             'Coil:Cooling:DX:SingleSpeed',
-            'CoolingCoil', '', 14067, 0.7, 3, 0.755, '',
+            'CoolingCoil', '', rated_cooling_capacity_watts, rated_shr, cop_cooling, sys_vol_flow, '',
             'FanOutlet', 'CoolingCoilOutlet', 'ClgCapFT', 'ClgCapFF', 'ClgEirFT', 'ClgEirFF', 'ClgPLF', '',
-            0, 0, 0, 0, 'CoilCondInlet', 'AirCooled', 0, '', 0, 0, 10
+            '', '', '', '', 'CoilCondInlet'
         )
         self._add_idf_object(
             'Curve:Biquadratic',
@@ -714,9 +774,5 @@ class Model:
         )
         self._add_idf_object(
             'Fan:OnOff',
-            'Fan', 'AlwaysOn', 0.7, 600, 0.755, 0.9, 1, 'AirLoopSupplyInlet', 'FanOutlet'
-        )
-        self._add_idf_object(
-            'SetpointManager:SingleZone:Cooling',
-            'SupplyTempMgr', 'Temperature', 13, 45, 'Indoor', 'ZoneAirNode', 'ZoneSupplyAirNode', 'AirLoopSupplyOutlet'
+            'Fan', '', '', static_pressure_pascals, sys_vol_flow, '', '', 'AirLoopSupplyInlet', 'FanOutlet'
         )

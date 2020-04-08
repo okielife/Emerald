@@ -1,3 +1,4 @@
+from pathlib import Path
 import sqlite3
 
 
@@ -7,8 +8,8 @@ class OutputProcessor:
         self.cursor.execute(sql_command)
         return self.cursor.fetchall()
 
-    def __init__(self, path_to_sql_file: str):
-        connection = sqlite3.connect(path_to_sql_file)
+    def __init__(self, path_to_sql_file: Path):
+        connection = sqlite3.connect(str(path_to_sql_file))
         self.cursor = connection.cursor()
 
         # get the index of the facility electricity report meter

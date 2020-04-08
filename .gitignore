@@ -1,3 +1,7 @@
+# some spots we'll drop non-git stuff
+tmp
+runs
+
 # PyCharm settings
 .idea
 
