@@ -89,10 +89,10 @@ class Model:
 
     def _setup_zones(self):
         # set up zones
-        self.zone_conditioned = Zone("ConditionedSpace")
+        self.zone_indoor = Zone("Indoor")
         self.zone_garage = Zone("Garage")
         # write IDF
-        self._add_idf_object('Zone', self.zone_conditioned.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
+        self._add_idf_object('Zone', self.zone_indoor.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
         self._add_idf_object('Zone', self.zone_garage.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
 
     def _setup_materials(self):
@@ -185,63 +185,63 @@ class Model:
         ceiling_height = 3  # eventually we need to fine tune this
         self.surface_main_bath_exterior_wall_west = Surface(
             'Main Bath Exterior Wall West',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_1, self.v_2, ceiling_height))
         self.surface_dax_exterior_wall_south = Surface(
             'Dax Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_2, self.v_3, ceiling_height))
         self.surface_dax_exterior_wall_west = Surface(
             'Dax Exterior Wall West',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_3, self.v_4, ceiling_height))
         self.surface_dax_exterior_wall_north = Surface(
             'Dax Exterior Wall North',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_4, self.v_5, ceiling_height))
         self.surface_entry_exterior_wall = Surface(
             'Entry Exterior Wall',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_5, self.v_6, ceiling_height))
         self.surface_office_exterior_wall_south = Surface(
             'Office Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_6, self.v_7, ceiling_height))
         self.surface_office_exterior_wall_west = Surface(
             'Office Exterior Wall West',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_7, self.v_8, ceiling_height))
         self.surface_office_exterior_wall_north = Surface(
             'Office Exterior Wall North',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_8, self.v_9, ceiling_height))
         self.surface_utility_exterior_wall_west = Surface(
             'Utility Exterior Wall West',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_9, self.v_10, ceiling_height))
         # conditioned-to-garage interface walls
         self.inter_zone_surface_small_garage = Surface(
             'Inter-zone Surface Small Garage Side',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_insulated_partition_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_insulated_partition_wall,
             BoundaryConditionType.OTHER_ZONE, self.zone_garage, 0.0, False, False,
             self._build_wall_vertices(self.v_10, self.v_34, ceiling_height))
         self.inter_zone_surface_intermediate = Surface(
             'Inter-zone Surface Intermediate Wall',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_insulated_partition_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_insulated_partition_wall,
             BoundaryConditionType.OTHER_ZONE, self.zone_garage, 0.0, False, False,
             self._build_wall_vertices(self.v_34, self.v_35, ceiling_height))
         self.inter_zone_surface_large_garage = Surface(
             'Inter-zone Surface Large Garage Side',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_insulated_partition_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_insulated_partition_wall,
             BoundaryConditionType.OTHER_ZONE, self.zone_garage, 0.0, False, False,
             self._build_wall_vertices(self.v_35, self.v_36, ceiling_height))
         # now do the garage exterior walls
@@ -298,78 +298,78 @@ class Model:
         # back to the remaining conditioned space exterior surfaces
         self.surface_master_exterior_wall_east = Surface(
             'Master Exterior Wall East',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_36, self.v_20, ceiling_height))
         self.surface_dining_exterior_wall_north = Surface(
             'Dining Exterior Wall North',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_20, self.v_21, ceiling_height))
         self.surface_dining_exterior_wall_east = Surface(
             'Dining Exterior Wall East',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_21, self.v_22, ceiling_height))
         self.surface_dining_exterior_wall_south = Surface(
             'Dining Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_22, self.v_23, ceiling_height))
         self.surface_living_exterior_wall_east_with_northern_window = Surface(
             'Living Room Exterior Wall East With Northern Window',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_23, self.v_24, ceiling_height))
         self.surface_living_exterior_wall_north = Surface(
             'Living Room Exterior Wall North',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_24, self.v_25, ceiling_height))
         self.surface_living_exterior_wall_east_behind_chimney = Surface(
             'Living Room Exterior Wall East Behind Chimney',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_25, self.v_26, ceiling_height))
         self.surface_living_exterior_wall_south = Surface(
             'Living Room Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_26, self.v_27, ceiling_height))
         self.surface_living_and_gibson_exterior_wall_east = Surface(
             'Living And Gibs Exterior Wall East',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_27, self.v_28, ceiling_height))
         self.surface_gibson_exterior_wall_south = Surface(
             'Gibs Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_28, self.v_29, ceiling_height))
         self.surface_study_exterior_wall_east = Surface(
             'Study Exterior Wall East',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_29, self.v_30, ceiling_height))
         self.surface_study_exterior_wall_south = Surface(
             'Study Exterior Wall South With Window',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_30, self.v_31, ceiling_height))
         self.surface_study_exterior_wall_west = Surface(
             'Study Exterior Wall West',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_31, self.v_32, ceiling_height))
         self.surface_main_bath_exterior_wall_south = Surface(
             'Main Bath Exterior Wall South',
-            self.zone_conditioned, SurfaceType.WALL, self.construction_exterior_wall,
+            self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_32, self.v_1, ceiling_height))
         # now the ceilings/roofs - need to fix this up later
         self.surface_ceiling_conditioned_space = Surface(
             'Conditioned Space Ceiling',
-            self.zone_conditioned, SurfaceType.ROOF, self.construction_roof,
+            self.zone_indoor, SurfaceType.ROOF, self.construction_roof,
             BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
             self._add_height_to_vertices(ceiling_height, [
                 self.v_32,
@@ -422,7 +422,7 @@ class Model:
         )
         self.surface_floor_conditioned_space = Surface(
             'Conditioned Space Floor',
-            self.zone_conditioned, SurfaceType.FLOOR, self.construction_floor,
+            self.zone_indoor, SurfaceType.FLOOR, self.construction_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
             self._add_height_to_vertices(0.0, [
                 self.v_1,
@@ -572,7 +572,7 @@ class Model:
         self._add_idf_object('Schedule:Constant', 'AlwaysOn', 'Discrete', 1)
         self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
         self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
-        self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 4', 'AnyNumber', 4)
+        self._add_idf_object('Schedule:Constant', 'ScheduleDualSetPoint', 'AnyNumber', 4)
         self._add_idf_object('Schedule:Constant', 'HVACTemplate-Always 0', 'AnyNumber', 0)
 
     def _setup_internal_gains(self):
@@ -585,167 +585,138 @@ class Model:
     def _setup_hvac(self):
         self._add_idf_object(
             'ThermostatSetpoint:DualSetpoint',
-            'Thermostat Dual SP Control', 'HeatingSetpoint', 'CoolingSetpoint'
+            'ThermostatControl', 'HeatingSetpoint', 'CoolingSetpoint'
         )
         self._add_idf_object(
             'ZoneControl:Thermostat',
-            'ConditionedSpace Thermostat', 'ConditionedSpace', 'HVACTemplate-Always 4',
-            'ThermostatSetpoint:DualSetpoint', 'Thermostat Dual SP Control'
+            'Thermostat', 'Indoor', 'ScheduleDualSetPoint', 'ThermostatSetpoint:DualSetpoint', 'ThermostatControl'
         )
         self._add_idf_object(
             'ZoneHVAC:EquipmentConnections',
-            'ConditionedSpace', 'ConditionedSpace Equipment', 'ConditionedSpace Supply Inlet',
-            '', 'ConditionedSpace Zone Air Node', 'ConditionedSpace Return Outlet'
+            'Indoor', 'HVACEquipment', 'ZoneSupplyAirNode', '', 'ZoneAirNode', 'ZoneReturnAirNode'
         )
         self._add_idf_object(
             'ZoneHVAC:EquipmentList',
-            'ConditionedSpace Equipment', 'SequentialLoad', 'ZoneHVAC:AirDistributionUnit', 'ConditionedSpace ATU', 1, 1
+            'HVACEquipment', 'SequentialLoad', 'ZoneHVAC:AirDistributionUnit', 'ADU', 1, 1
         )
         self._add_idf_object(
             'ZoneHVAC:AirDistributionUnit',
-            'ConditionedSpace ATU', 'ConditionedSpace Supply Inlet',
-            'AirTerminal:SingleDuct:ConstantVolume:NoReheat', 'ConditionedSpace CV'
+            'ADU', 'ZoneSupplyAirNode', 'AirTerminal:SingleDuct:ConstantVolume:NoReheat', 'AirTerminal'
         )
         self._add_idf_object(
             'AirTerminal:SingleDuct:ConstantVolume:NoReheat',
-            'ConditionedSpace CV', '', 'ConditionedSpace Zone Equip Inlet', 'ConditionedSpace Supply Inlet', 0.755
+            'AirTerminal', '', 'ZoneEquipmentInlet', 'ZoneSupplyAirNode', 0.755
         )
         self._add_idf_object(
             'AirLoopHVAC',
-            'HeatPump', '', '', 0.755, 'HeatPump Branches', '', 'HeatPump Air Loop Inlet', 'HeatPump Return Air Outlet',
-            'HeatPump Supply Path Inlet', 'HeatPump Air Loop Outlet'
+            'HeatPump', '', '', 0.755, 'Branches', '', 'AirLoopSupplyInlet', 'AirLoopDemandOutlet',
+            'AirLoopDemandInlet', 'AirLoopSupplyOutlet'
         )
         self._add_idf_object(
             'BranchList',
-            'HeatPump Branches', 'HeatPump Main Branch'
+            'Branches', 'Branch'
         )
         self._add_idf_object(
             'Branch',
-            'HeatPump Main Branch', '', 'AirLoopHVAC:UnitaryHeatPump:AirToAir', 'HeatPump Heat Pump',
-            'HeatPump Air Loop Inlet', 'HeatPump Air Loop Outlet'
+            'Branch', '', 'AirLoopHVAC:UnitaryHeatPump:AirToAir', 'HeatPump',
+            'AirLoopSupplyInlet', 'AirLoopSupplyOutlet'
         )
         self._add_idf_object(
             'AirLoopHVAC:SupplyPath',
-            'HeatPump Supply Path', 'HeatPump Supply Path Inlet', 'AirLoopHVAC:ZoneSplitter', 'HeatPump Zone Splitter'
+            'HPSupplyPath', 'AirLoopDemandInlet', 'AirLoopHVAC:ZoneSplitter', 'ZoneSplitter'
         )
         self._add_idf_object(
             'AirLoopHVAC:ZoneSplitter',
-            'HeatPump Zone Splitter', 'HeatPump Supply Path Inlet', 'ConditionedSpace Zone Equip Inlet'
+            'ZoneSplitter', 'AirLoopDemandInlet', 'ZoneEquipmentInlet'
         )
         self._add_idf_object(
             'AirLoopHVAC:ReturnPath',
-            'HeatPump Return Path', 'HeatPump Return Air Outlet', 'AirLoopHVAC:ZoneMixer', 'HeatPump Zone Mixer'
+            'HPReturnPath', 'AirLoopDemandOutlet', 'AirLoopHVAC:ZoneMixer', 'ZoneMixer'
         )
         self._add_idf_object(
             'AirLoopHVAC:ZoneMixer',
-            'HeatPump Zone Mixer', 'HeatPump Return Air Outlet', 'ConditionedSpace Return Outlet'
+            'ZoneMixer', 'AirLoopDemandOutlet', 'ZoneReturnAirNode'
         )
         self._add_idf_object(
             'AirLoopHVAC:UnitaryHeatPump:AirToAir',
-            'HeatPump Heat Pump', '', 'HeatPump Air Loop Inlet', 'HeatPump Air Loop Outlet', 0.755, 0.755, 0.755,
-            'ConditionedSpace',
-            'Fan:OnOff', 'HeatPump Supply Fan',
-            'Coil:Heating:DX:SingleSpeed', 'HeatPump HP Heating Coil',
-            'Coil:Cooling:DX:SingleSpeed', 'HeatPump Cooling Coil',
-            'Coil:Heating:Electric', 'HeatPump Sup Heat Coil',
+            'HeatPump', '', 'AirLoopSupplyInlet', 'AirLoopSupplyOutlet', 0.755, 0.755, 0.755,
+            'Indoor',
+            'Fan:OnOff', 'Fan',
+            'Coil:Heating:DX:SingleSpeed', 'HeatingCoil',
+            'Coil:Cooling:DX:SingleSpeed', 'CoolingCoil',
+            'Coil:Heating:Electric', 'SupplementalCoil',
             40, 21, 'BlowThrough', 'HVACTemplate-Always 0'
         )
         self._add_idf_object(
             'Coil:Heating:DX:SingleSpeed',
-            'HeatPump HP Heating Coil', '', 14067, 2.75, 0.755, '',
-            'HeatPump Cooling Coil Outlet', 'HeatPump Heating Coil Outlet',
-            'HeatPump HP Heating Coil Cap-FT', 'HeatPump HP Heating Coil Cap-FF', 'HeatPump HP Heating Coil EIR-FT',
-            'HeatPump HP Heating Coil EIR-FF', 'HeatPump HP Heating Coil PLF', 'HeatPump HP Heating Coil DefrostEIR-FT',
+            'HeatingCoil', '', 14067, 2.75, 0.755, '',
+            'CoolingCoilOutlet', 'HeatingCoilOutlet',
+            'HtgCapFT', 'HtgCapFF', 'HtgEirFT', 'HtgEirFF', 'HtgPLF', 'HtgDefrostEirFT',
             -8, '', 5, 0, 0, 'ReverseCycle', 'Timed', 0.058333, 1000
         )
         self._add_idf_object(
             'Curve:Cubic',
-            'HeatPump HP Heating Coil Cap-FT',
-            0.758746, 0.027626, 0.000148716, 0.0000034992,
-            -20, 20
+            'HtgCapFT', 0.758746, 0.027626, 0.000148716, 0.0000034992, -20, 20
         )
         self._add_idf_object(
             'Curve:Cubic',
-            'HeatPump HP Heating Coil Cap-FF',
-            0.84, 0.16, 0.0, 0.0,
-            0.5, 1.5
+            'HtgCapFF', 0.84, 0.16, 0.0, 0.0, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Cubic',
-            'HeatPump HP Heating Coil EIR-FT',
-            1.19248, -0.0300438, 0.00103745, -0.000023328,
-            -20, 20
+            'HtgEirFT', 1.19248, -0.0300438, 0.00103745, -0.000023328, -20, 20
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HeatPump HP Heating Coil EIR-FF',
-            1.3824, -0.4336, 0.0512,
-            0.0, 1.0
+            'HtgEirFF', 1.3824, -0.4336, 0.0512, 0.0, 1.0
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HeatPump HP Heating Coil PLF',
-            0.75, 0.25, 0.0,
-            0.0, 1.0
+            'HtgPLF', 0.75, 0.25, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'HeatPump HP Heating Coil DefrostEIR-FT',
-            1, 0, 0, 0, 0, 0, 0, 50, 0, 50
+            'HtgDefrostEirFT', 1, 0, 0, 0, 0, 0, 0, 50, 0, 50
         )
         self._add_idf_object(
             'Coil:Heating:Electric',
-            'HeatPump Sup Heat Coil', '', 1, 10000, 'HeatPump Heating Coil Outlet', 'HeatPump Air Loop Outlet'
+            'SupplementalCoil', '', 1, 10000, 'HeatingCoilOutlet', 'AirLoopSupplyOutlet'
         )
         self._add_idf_object(
             'Coil:Cooling:DX:SingleSpeed',
-            'HeatPump Cooling Coil', '', 14067, 0.7, 3, 0.755, '',
-            'HeatPump Supply Fan Outlet', 'HeatPump Cooling Coil Outlet', 'HeatPump Cool Coil Cap-FT',
-            'HeatPump Cool Coil Cap-FF', 'HeatPump Cool Coil EIR-FT', 'HeatPump Cool Coil EIR-FF',
-            'HeatPump Cool Coil PLF', '',
-            0, 0, 0, 0, 'HeatPump Cooling Coil Condenser Inlet', 'AirCooled', 0, '', 0, 0, 10
+            'CoolingCoil', '', 14067, 0.7, 3, 0.755, '',
+            'FanOutlet', 'CoolingCoilOutlet', 'ClgCapFT', 'ClgCapFF', 'ClgEirFT', 'ClgEirFF', 'ClgPLF', '',
+            0, 0, 0, 0, 'CoilCondInlet', 'AirCooled', 0, '', 0, 0, 10
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'HeatPump Cool Coil Cap-FT',
-            0.942587793, 0.009543347, 0.00068377, -0.011042676, 0.000005249, -0.00000972,
-            12.77778, 23.88889, 18.0, 46.11111
+            'ClgCapFT', 0.94258779, 0.00954335, 0.0006838, -0.01104267, 0.00000525, -0.0000097, 12.77, 23.88, 18.0, 46.1
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HeatPump Cool Coil Cap-FF',
-            0.8, 0.2, 0.0,
-            0.5, 1.5
+            'ClgCapFF', 0.8, 0.2, 0.0, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'HeatPump Cool Coil EIR-FT',
-            0.342414409, 0.034885008, -0.0006237, 0.004977216, 0.000437951, -0.000728028,
-            12.77778, 23.88889, 18.0, 46.11111
+            'ClgEirFT', 0.34241441, 0.03488501, -0.000624, 0.00497722, 0.00043795, -0.00072803, 12.77, 23.88, 18.0, 46.1
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HeatPump Cool Coil EIR-FF',
-            1.1552, -0.1808, 0.0256,
-            0.5, 1.5
+            'ClgEirFF', 1.1552, -0.1808, 0.0256, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HeatPump Cool Coil PLF',
-            0.85, 0.15, 0.0,
-            0.0, 1.0
+            'ClgPLF', 0.85, 0.15, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'OutdoorAir:Node',
-            'HeatPump Cooling Coil Condenser Inlet', -1
+            'CoilCondInlet', -1
         )
         self._add_idf_object(
             'Fan:OnOff',
-            'HeatPump Supply Fan', 'AlwaysOn', 0.7, 600, 0.755, 0.9, 1,
-            'HeatPump Air Loop Inlet', 'HeatPump Supply Fan Outlet'
+            'Fan', 'AlwaysOn', 0.7, 600, 0.755, 0.9, 1, 'AirLoopSupplyInlet', 'FanOutlet'
         )
         self._add_idf_object(
             'SetpointManager:SingleZone:Cooling',
-            'HeatPump Economizer Supply Air Temp Manager', 'Temperature', 13, 45, 'ConditionedSpace',
-            'ConditionedSpace Zone Air Node', 'ConditionedSpace Supply Inlet', 'HeatPump Air Loop Outlet'
+            'SupplyTempMgr', 'Temperature', 13, 45, 'Indoor', 'ZoneAirNode', 'ZoneSupplyAirNode', 'AirLoopSupplyOutlet'
         )
