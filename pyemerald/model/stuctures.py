@@ -52,9 +52,22 @@ class Material:
 
 
 @dataclass()
+class MaterialWindowGlazing:
+    name: str
+    thickness: float
+
+
+@dataclass()
+class MaterialWindowGas:
+    name: str
+    gas_type: str
+    thickness: float
+
+
+@dataclass()
 class Construction:
     name: str
-    layers: List[Material]
+    layers: List[Union[Material, MaterialWindowGlazing, MaterialWindowGas]]
 
 
 @dataclass()
@@ -83,6 +96,22 @@ class Surface:
     sun_exposed: bool
     vertices: List[Vertex3D]
     # sub_surfaces: List[SubSurface]
+
+
+@dataclass()
+class Window:
+    name: str
+    construction: Construction
+    base_surface: Surface
+    vertices: List[Vertex3D]
+
+
+@dataclass()
+class Door:
+    name: str
+    construction: Construction
+    base_surface: Surface
+    vertices: List[Vertex3D]
 
 
 @dataclass()

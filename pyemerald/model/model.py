@@ -3,13 +3,17 @@ from typing import List
 from pyemerald.model.stuctures import (
     BoundaryConditionType,
     Construction,
+    Door,
     Material,
+    MaterialWindowGas,
+    MaterialWindowGlazing,
     OutputMeter,
     OutputVariable,
     Surface,
     SurfaceType,
     Vertex2D,
     Vertex3D,
+    Window,
     Zone,
 )
 
@@ -28,6 +32,7 @@ class Model:
         self._setup_constructions()
         self._setup_floor_vertices()
         self._setup_surfaces()
+        self._setup_windows_and_doors()
         self._water_use()
         self._setup_hvac()
         self._setup_outputs()
@@ -40,6 +45,16 @@ class Model:
             Vertex3D(vertex_a, ceiling_height),
             Vertex3D(vertex_b, ceiling_height),
             Vertex3D(vertex_b, 0)
+        ]
+
+    @staticmethod
+    def _build_window_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom_height: float, top_height: float) -> List[Vertex3D]:
+        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        return [
+            Vertex3D(v_a, bottom_height),
+            Vertex3D(v_a, top_height),
+            Vertex3D(v_b, top_height),
+            Vertex3D(v_b, bottom_height)
         ]
 
     @staticmethod
@@ -104,16 +119,32 @@ class Model:
         self.material_shingles = Material('Shingles', 0.01, 0.74, 2110, 920, 'Handbook 2017 - Asphalt')
         self.material_roof_insulation = Material('R31Insulation', 0.21, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
         self.material_concrete = Material('6InchConcrete', 0.15, 1.73, 2242, 837, 'In IDF data-sets')
-        self.material_wood_floor = Material('WoodFlooring', 0.15, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
+        self.material_wood_floor = Material('WoodFlooring', 0.03, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
+        self.material_garage_door = Material('GarageDoorMetal', 0.005, 167, 2700, 896, 'Assuming Aluminum')
+        self.material_door = Material('DoorMaterialWood', 0.05, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
+        self.material_glass_3mm = MaterialWindowGlazing('Clear 3mm Glazing', 0.003)
+        self.material_window_gas = MaterialWindowGas('Air Gap 13mm', 'Air', 0.013)
         # write IDF
         all_materials = [
             self.material_brick, self.material_sheathing, self.material_wall_insulation, self.material_gypsum,
-            self.material_shingles, self.material_roof_insulation, self.material_concrete, self.material_wood_floor
+            self.material_shingles, self.material_roof_insulation, self.material_concrete, self.material_wood_floor,
+            self.material_garage_door, self.material_door
         ]
         for m in all_materials:
             self._add_idf_object(
                 'Material',
                 m.name, 'MediumRough', m.thickness, m.thermal_conductivity, m.density, m.specific_heat, 0.9, 0.6, 0.6
+            )
+        for g in [self.material_glass_3mm]:
+            self._add_idf_object(
+                'WindowMaterial:Glazing',
+                g.name, 'SpectralAverage', '', g.thickness,
+                0.837, 0.075, 0.075, 0.898, 0.081, 0.081, 0.0, 0.84, 0.84, 0.9
+            )
+        for gas in [self.material_window_gas]:
+            self._add_idf_object(
+                'WindowMaterial:Gas',
+                gas.name, gas.gas_type, gas.thickness
             )
 
     def _setup_constructions(self):
@@ -131,54 +162,66 @@ class Model:
             self.material_concrete, self.material_wood_floor
         ])
         self.construction_garage_floor = Construction('GarageFloorConstruction', [self.material_concrete])
+        self.construction_door = Construction('DoorConstruction', [self.material_door])
+        self.construction_garage_door = Construction('GarageDoorConstruction', [self.material_garage_door])
+        self.construction_operable_window = Construction('OperableWindow', [
+            self.material_glass_3mm, self.material_window_gas, self.material_glass_3mm
+        ])
+        self.construction_inoperable_window = Construction('InoperableWindow', [
+            self.material_glass_3mm, self.material_window_gas, self.material_glass_3mm
+        ])
         # write IDF
         all_constructions = [
             self.construction_exterior_wall,
             self.construction_insulated_partition_wall,
             self.construction_roof,
             self.construction_floor,
-            self.construction_garage_floor
+            self.construction_garage_floor,
+            self.construction_door,
+            self.construction_garage_door,
+            self.construction_operable_window,
+            self.construction_inoperable_window
         ]
         for c in all_constructions:
             self._add_idf_object('Construction', c.name, *[layer.name for layer in c.layers])
 
     def _setup_floor_vertices(self):
         # set up vertices
-        self.v_1 = Vertex2D('1', 28.3211, 43.5974)
-        self.v_2 = Vertex2D('2', 29.631, 45.624)
-        self.v_3 = Vertex2D('3', 27.1138, 47.2509)
-        self.v_4 = Vertex2D('4', 29.2371, 50.5361)
-        self.v_5 = Vertex2D('5', 32.1169, 48.6747)
-        self.v_6 = Vertex2D('6', 33.1648, 50.296)
-        self.v_7 = Vertex2D('7', 32.1409, 50.9578)
-        self.v_8 = Vertex2D('8', 34.3194, 54.3282)
-        self.v_9 = Vertex2D('9', 34.8313, 53.9973)
-        self.v_10 = Vertex2D('10', 36.6513, 56.8132)
-        self.v_11 = Vertex2D('11', 35.798, 57.3647)
-        self.v_12 = Vertex2D('12', 36.7908, 58.9006)
-        self.v_13 = Vertex2D('13', 36.4068, 59.1488)
-        self.v_14 = Vertex2D('14', 38.1992, 61.9219)
-        self.v_15 = Vertex2D('15', 38.5832, 61.6737)
-        self.v_16 = Vertex2D('16', 39.5759, 63.2097)
-        self.v_17 = Vertex2D('17', 43.4583, 60.7003)
-        self.v_18 = Vertex2D('18', 45.6644, 64.1134)
-        self.v_19 = Vertex2D('19', 51.232, 60.5148)
-        self.v_20 = Vertex2D('20', 43.5247, 48.5902)
-        self.v_21 = Vertex2D('21', 44.058, 48.2455)
-        self.v_22 = Vertex2D('22', 41.7002, 44.5977)
-        self.v_23 = Vertex2D('23', 41.1669, 44.9424)
-        self.v_24 = Vertex2D('24', 40.5878, 44.0464)
-        self.v_25 = Vertex2D('25', 41.1211, 43.7017)
-        self.v_26 = Vertex2D('26', 40.1698, 42.2298)
-        self.v_27 = Vertex2D('27', 39.6365, 42.5745)
-        self.v_28 = Vertex2D('28', 36.7686, 38.1375)
-        self.v_29 = Vertex2D('29', 33.4408, 40.2884)
-        self.v_30 = Vertex2D('30', 33.0548, 39.6911)
-        self.v_31 = Vertex2D('31', 30.7082, 41.2077)
-        self.v_32 = Vertex2D('32', 31.0943, 41.805)
-        self.v_34 = Vertex2D('34', 39.4716, 55.1688)
-        self.v_35 = Vertex2D('35', 41.5036, 58.1914)
-        self.v_36 = Vertex2D('36', 47.1678, 54.5592)
+        self.v_1 = Vertex2D('1', 28.212034, 43.770042)
+        self.v_2 = Vertex2D('2', 29.521912, 45.796454)
+        self.v_3 = Vertex2D('3', 27.004772, 47.423578)
+        self.v_4 = Vertex2D('4', 29.127958, 50.70856)
+        self.v_5 = Vertex2D('5', 32.00781, 48.847248)
+        self.v_6 = Vertex2D('6', 33.05556, 50.46853)
+        self.v_7 = Vertex2D('7', 32.031686, 51.1302)
+        self.v_8 = Vertex2D('8', 34.21253, 54.499002)
+        self.v_9 = Vertex2D('9', 34.722816, 54.169056)
+        self.v_10 = Vertex2D('10', 36.543234, 56.984138)
+        self.v_11 = Vertex2D('11', 35.68954, 57.536588)
+        self.v_12 = Vertex2D('12', 36.682426, 59.071764)
+        self.v_13 = Vertex2D('13', 36.29787, 59.321192)
+        self.v_14 = Vertex2D('14', 38.090602, 62.093856)
+        self.v_15 = Vertex2D('15', 38.474396, 61.845444)
+        self.v_16 = Vertex2D('16', 39.467536, 63.381128)
+        self.v_17 = Vertex2D('17', 43.349418, 60.872878)
+        self.v_18 = Vertex2D('18', 45.555408, 64.285876)
+        self.v_19 = Vertex2D('19', 51.123088, 60.68695)
+        self.v_20 = Vertex2D('20', 43.416474, 48.76165)
+        self.v_21 = Vertex2D('21', 43.949112, 48.41748)
+        self.v_22 = Vertex2D('22', 41.59123, 44.769532)
+        self.v_23 = Vertex2D('23', 41.0591, 45.113956)
+        self.v_24 = Vertex2D('24', 40.478964, 44.21886)
+        self.v_25 = Vertex2D('25', 41.01211, 43.874182)
+        self.v_26 = Vertex2D('26', 40.061388, 42.40149)
+        self.v_27 = Vertex2D('27', 39.52748, 42.74693)
+        self.v_28 = Vertex2D('28', 36.65982, 38.309042)
+        self.v_29 = Vertex2D('29', 33.332674, 40.45966)
+        self.v_30 = Vertex2D('30', 32.945832, 39.863014)
+        self.v_31 = Vertex2D('31', 30.599634, 41.379902)
+        self.v_32 = Vertex2D('32', 30.986984, 41.975786)
+        self.v_34 = Vertex2D('34', 39.542212, 55.136542)
+        self.v_35 = Vertex2D('35', 41.501822, 58.192924)
+        self.v_36 = Vertex2D('36', 47.154846, 54.547008)
 
     def _setup_surfaces(self):
         # set up surfaces
@@ -510,6 +553,196 @@ class Model:
                 s.construction.name, s.zone.name,
                 BoundaryConditionType.to_building_surface_key_choice(s.outdoor_bc_type), bc_instance_name,
                 sun_exposed_string, wind_exposed_string, s.view_factor_to_ground, len(s.vertices), *vertex_list
+            )
+
+    def _setup_windows_and_doors(self):
+        # dax window
+        v_1 = Vertex2D('alpha', 27.806904, 48.657764)
+        v_2 = Vertex2D('beta', 28.331414, 49.467262)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_dax = Window(
+            'Dax Window', self.construction_operable_window, self.surface_dax_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # office window
+        v_1 = Vertex2D('gamma', 32.667194, 52.106576)
+        v_2 = Vertex2D('delta', 33.578038, 53.515006)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_office = Window(
+            'Office Window', self.construction_operable_window, self.surface_office_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # laundry window
+        v_1 = Vertex2D('epsilon', 35.383978, 55.188866)
+        v_2 = Vertex2D('zeta', 35.88131, 55.958486)
+        window_bottom = 1.2  # assumed
+        window_top = 2.5  # assumed
+        self.window_laundry = Window(
+            'Laundry Window', self.construction_inoperable_window, self.surface_utility_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # garage window
+        v_1 = Vertex2D('eta', 36.946078, 60.320936)
+        v_2 = Vertex2D('theta', 37.442394, 61.089032)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_garage = Window(
+            'Garage Window', self.construction_operable_window, self.surface_garage_exterior_wall_west_b_with_window,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # master closet window
+        v_1 = Vertex2D('iota', 46.589442, 53.66639)
+        v_2 = Vertex2D('kappa', 45.953172, 52.68214)
+        window_bottom = 2  # assumed
+        window_top = 2.5  # assumed
+        self.window_master_closet = Window(
+            'Master Closet Window', self.construction_inoperable_window, self.surface_master_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # master bedroom window
+        v_1 = Vertex2D('lambda', 44.894246, 51.042062)
+        v_2 = Vertex2D('mu', 43.952922, 49.58969)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_master_bedroom = Window(
+            'Master Bedroom Window', self.construction_operable_window, self.surface_master_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # dining room window including door
+        v_1 = Vertex2D('nu', 43.289728, 47.388272)
+        v_2 = Vertex2D('xi', 42.2529, 45.791882)
+        window_bottom = 0.05  # assumed
+        window_top = 2.0  # assumed
+        self.window_dining_and_door = Window(
+            'Dining Window Including Door', self.construction_inoperable_window, self.surface_dining_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # living room window northern
+        v_1 = Vertex2D('omicron', 41.030652, 45.069506)
+        v_2 = Vertex2D('pi', 40.547798, 44.322746)
+        window_bottom = 0.67  # assumed
+        window_top = 2.8  # assumed
+        self.window_living_room_northern = Window(
+            'Living Room Northern Window', self.construction_inoperable_window,
+            self.surface_living_exterior_wall_east_with_northern_window,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # living room window southern
+        v_1 = Vertex2D('rho', 39.445438, 42.618152)
+        v_2 = Vertex2D('sigma', 38.962584, 41.869614)
+        window_bottom = 0.67  # assumed
+        window_top = 2.8  # assumed
+        self.window_living_room_southern = Window(
+            'Living Room Southern Window', self.construction_inoperable_window,
+            self.surface_living_and_gibson_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # gibs window
+        v_1 = Vertex2D('tau', 37.942266, 40.290242)
+        v_2 = Vertex2D('upsilon', 37.460428, 39.544498)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_gibs = Window(
+            'Gibs Window', self.construction_operable_window, self.surface_living_and_gibson_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # study window
+        v_1 = Vertex2D('phi', 32.029908, 40.455596)
+        v_2 = Vertex2D('chi', 31.517336, 40.786558)
+        window_bottom = 0.67  # assumed
+        window_top = 2.5  # assumed
+        self.window_study = Window(
+            'Study Window', self.construction_inoperable_window, self.surface_study_exterior_wall_south,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # main bath window
+        v_1 = Vertex2D('psi', 29.49448, 42.941494)
+        v_2 = Vertex2D('omega', 28.512262, 43.574462)
+        window_bottom = 2  # assumed
+        window_top = 2.5  # assumed
+        self.window_main_bath = Window(
+            'Main Bath Window', self.construction_inoperable_window, self.surface_main_bath_exterior_wall_south,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+        )
+        # entry door
+        v_1 = Vertex2D('!', 32.243522, 49.206912)
+        v_2 = Vertex2D('@', 32.74187, 49.9745)
+        door_bottom = 0.05  # assumed
+        door_top = 2  # assumed
+        self.door_entry = Door(
+            'Entry Door', self.construction_door, self.surface_entry_exterior_wall,
+            self._build_window_vertices(v_1, v_2, door_bottom, door_top)
+        )
+        # garage door small
+        v_1 = Vertex2D('#', 40.109648, 62.96279)
+        v_2 = Vertex2D('$', 42.114038, 61.671454)
+        door_bottom = 0.05  # assumed
+        door_top = 2  # assumed
+        self.door_garage_small = Door(
+            'Small Garage Door', self.construction_garage_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self._build_window_vertices(v_1, v_2, door_bottom, door_top)
+        )
+        # garage man door
+        v_1 = Vertex2D('%', 42.582084, 61.3664)
+        v_2 = Vertex2D('^', 43.26636, 60.924694)
+        door_bottom = 0.05  # assumed
+        door_top = 2  # assumed
+        self.door_garage_man = Door(
+            'Garage Man Door', self.construction_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self._build_window_vertices(v_1, v_2, door_bottom, door_top)
+        )
+        # garage door large
+        v_1 = Vertex2D('&', 46.325028, 63.785496)
+        v_2 = Vertex2D('*', 50.356516, 61.181996)
+        door_bottom = 0.05  # assumed
+        door_top = 2  # assumed
+        self.door_garage_large = Door(
+            'Large Garage Door', self.construction_garage_door,
+            self.surface_garage_exterior_wall_north_c_with_large_garage_door,
+            self._build_window_vertices(v_1, v_2, door_bottom, door_top)
+        )
+
+        all_windows = [
+            self.window_dax,
+            self.window_office,
+            self.window_laundry,
+            self.window_garage,
+            self.window_master_closet,
+            self.window_master_bedroom,
+            self.window_dining_and_door,
+            self.window_living_room_northern,
+            self.window_living_room_southern,
+            self.window_gibs,
+            self.window_study,
+            self.window_main_bath
+        ]
+        for w in all_windows:
+            vertex_list = []
+            for v in w.vertices:
+                vertex_list.extend([v.part_2d.x, v.part_2d.y, v.height])
+            self._add_idf_object(
+                'FenestrationSurface:Detailed',
+                w.name, 'Window', w.construction.name, w.base_surface.name, '', 'AutoCalculate', '', '',
+                len(w.vertices), *vertex_list
+            )
+        all_doors = [
+            self.door_entry,
+            self.door_garage_small,
+            self.door_garage_man,
+            self.door_garage_large
+        ]
+        for d in all_doors:
+            vertex_list = []
+            for v in d.vertices:
+                vertex_list.extend([v.part_2d.x, v.part_2d.y, v.height])
+            self._add_idf_object(
+                'FenestrationSurface:Detailed',
+                d.name, 'Door', d.construction.name, d.base_surface.name, '', 'AutoCalculate', '', '',
+                len(d.vertices), *vertex_list
             )
 
     def _setup_outputs(self):
