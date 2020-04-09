@@ -771,8 +771,8 @@ class Model:
             # OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
             OutputVariable('Zone Thermostat Heating Setpoint Temperature', '*'),
             OutputVariable('Zone Thermostat Cooling Setpoint Temperature', '*'),
-            OutputVariable('Zone Air Terminal Sensible Heating Energy', '*'),
-            OutputVariable('Zone Air Terminal Sensible Cooling Energy', '*'),
+            OutputVariable('Zone Air Terminal Sensible Heating Rate', '*'),
+            OutputVariable('Zone Air Terminal Sensible Cooling Rate', '*'),
             OutputVariable('Fan Air Mass Flow Rate', '*'),
             OutputVariable('Cooling Coil Total Cooling Rate', '*'),
             OutputVariable('Cooling Coil Sensible Cooling Rate', '*'),
@@ -782,7 +782,6 @@ class Model:
             OutputVariable('Schedule Value', '*'),
         ]
         self.output_meters = [
-            OutputMeter('EnergyTransfer:Facility',),
             OutputMeter('Electricity:Facility'),
         ]
         # write IDF
