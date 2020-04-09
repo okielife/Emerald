@@ -8,8 +8,9 @@ runs
 # this is just a symlink to my local eplus install, purely for PyCharm convenience
 epinstall
 
-# this is the librecad temp file
+# this are some librecad temp files
 pyemerald/model/resources/schematic.dxf~
+/pyemerald/model/resources/#schematic.dxf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

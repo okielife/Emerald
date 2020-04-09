@@ -94,9 +94,10 @@ class Model:
 
     def _setup_location(self):
         self._add_idf_object('Site:Location', 'Cashion', 35.798, -97.679, -6, 396)
+        # building surface temps were generated
         self._add_idf_object(
             'Site:GroundTemperature:BuildingSurface',
-            19.53, 19.50, 19.54, 19.60, 20.00, 21.64, 22.23, 22.38, 21.45, 20.12, 19.80, 19.63
+            22.797, 22.755, 23.005, 25.524, 26.319, 26.965, 27.372, 27.515, 27.325, 26.906, 24.156, 23.281
         )
         self._add_idf_object(
             'SizingPeriod:DesignDay',
@@ -232,7 +233,7 @@ class Model:
 
     def _setup_surfaces(self):
         # set up surfaces
-        ceiling_height = 3  # eventually we need to fine tune this
+        ceiling_height = 3.05  # eventually we need to fine tune this
         self.surface_main_bath_exterior_wall_west = Surface(
             'Main Bath Exterior Wall West',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
