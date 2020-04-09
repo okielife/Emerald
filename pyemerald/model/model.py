@@ -13,6 +13,9 @@ from pyemerald.model.stuctures import (
     OutputMeter,
     OutputVariable,
     Person,
+    ScheduleCompact,
+    ScheduleConstant,
+    ScheduleTypeLimit,
     Surface,
     SurfaceType,
     Vertex2D,
@@ -29,7 +32,7 @@ class Model:
         # order does matter here, materials need to be declared before constructions, etc.
         self._setup_settings()
         self._setup_location()
-        self._setup_schedule_types()
+        self._setup_scheduling()
         self._setup_zones()
         self._setup_internal_gains()
         self._setup_materials()
@@ -795,13 +798,36 @@ class Model:
         self._add_idf_object('Output:SQLite', 'SimpleAndTabular')
         self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings', 'DisplayUnusedSchedules')
 
-    def _setup_schedule_types(self):
-        self._add_idf_object('ScheduleTypeLimits', 'AnyNumber')
-        self._add_idf_object('ScheduleTypeLimits', 'Fraction', 0, 1, 'Continuous')
+    def _setup_scheduling(self):
+        self.schedule_type_any = ScheduleTypeLimit('AnyNumber')
+        self.schedule_type_frac = ScheduleTypeLimit('Fraction', 0, 1)
+        # self.schedule_type_on_off = ScheduleTypeLimit('OnOff', 0, 1, 'Discrete')
+        for s in [self.schedule_type_any, self.schedule_type_frac]:
+            min_string = ''
+            if s.min != -1:
+                min_string = str(s.min)
+            max_string = ''
+            if s.max != -1:
+                max_string = str(s.max)
+            self._add_idf_object('ScheduleTypeLimits', s.name, min_string, max_string, s.discrete_or_continuous)
+        self.schedule_infiltration = ScheduleConstant('InfiltrationSchedule', self.schedule_type_frac, 1)
+        self.schedule_activity_dad = ScheduleConstant('ScheduleDadActivity', self.schedule_type_any, 115)
+        self.schedule_activity_mom = ScheduleConstant('ScheduleMomActivity', self.schedule_type_any, 100)
+        self.schedule_equipment_office_computers = ScheduleConstant('OfficeCompSchedule', self.schedule_type_frac, 1.0)
+        self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
+        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
+        self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
+        all_schedules = [
+            self.schedule_infiltration,
+            self.schedule_activity_dad, self.schedule_activity_mom,
+            self.schedule_equipment_office_computers,
+            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point
+        ]
+        for s in all_schedules:
+            self._add_idf_object('Schedule:Constant', s.name, s.type_limits.name, s.value)
 
     def _setup_internal_gains(self):
         # infiltration
-        self._add_idf_object('Schedule:Constant', 'InfiltrationSchedule', 'Fraction', 1)
         self.infiltration_zone = Infiltration('Main Zone Infiltration', self.zone_indoor, 'InfiltrationSchedule', 0.010)
         self.infiltration_garage = Infiltration('Garage Infiltration', self.zone_garage, 'InfiltrationSchedule', 0.028)
         for i in [self.infiltration_zone, self.infiltration_garage]:
@@ -820,7 +846,6 @@ class Model:
             'For: AllOtherDays', 'Until: 24:00', 0.7,
             'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
         )
-        self._add_idf_object('Schedule:Constant', 'ScheduleDadActivity', 'AnyNumber', 115.0)
         self.person_dad_main_zone = Person('Dad', self.zone_indoor, 'ScheduleDadInMainZone', 'ScheduleDadActivity')
         self._add_idf_object(
             'Schedule:Compact', 'ScheduleMomInMainZone', 'Fraction',
@@ -830,7 +855,6 @@ class Model:
             'For: AllOtherDays', 'Until: 24:00', 0.7,
             'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
         )
-        self._add_idf_object('Schedule:Constant', 'ScheduleMomActivity', 'AnyNumber', 100.0)
         self.person_mom_main_zone = Person('Mom', self.zone_indoor, 'ScheduleMomInMainZone', 'ScheduleMomActivity')
         for p in [self.person_dad_main_zone, self.person_mom_main_zone]:
             self._add_idf_object(
@@ -941,7 +965,6 @@ class Model:
                 'Lights', light.name, light.zone.name, light.schedule_name, 'LightingLevel', light.design_level,
                 '', '', 0.0, light.fraction_radiant, light.fraction_visible, 0, 'GeneralLights'
             )
-        self._add_idf_object('Schedule:Constant', 'OfficeCompSchedule', 'Fraction', 1.0)
         self.equip_office_comps = Equipment('Office computers', self.zone_indoor, 'OfficeCompSchedule', 400)
         self._add_idf_object(
             'Schedule:Compact', 'DishwasherSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
@@ -1034,9 +1057,6 @@ class Model:
         rated_shr = 0.7  # assumed
         supplemental_heater_capacity_watts = 10000  # assumed
         defrost_time_period = 0.06
-        self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
-        self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
-        self._add_idf_object('Schedule:Constant', 'ScheduleDualSetPoint', 'AnyNumber', 4)
         self._add_idf_object(
             'ThermostatSetpoint:DualSetpoint',
             'ThermostatControl', 'HeatingSetpoint', 'CoolingSetpoint'

@@ -37,6 +37,28 @@ class BoundaryConditionType(Enum):
 
 
 @dataclass()
+class ScheduleTypeLimit:
+    name: str
+    min: float = -1
+    max: float = -1
+    discrete_or_continuous: str = 'Continuous'
+
+
+@dataclass()
+class ScheduleConstant:
+    name: str
+    type_limits: ScheduleTypeLimit
+    value: float
+
+
+@dataclass()
+class ScheduleCompact:
+    name: str
+    type_limits: ScheduleTypeLimit
+    fields: List[Union[str, float]]
+
+
+@dataclass()
 class Zone:
     name: str
 
