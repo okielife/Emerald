@@ -150,7 +150,7 @@ class OutputMeter:
 class Infiltration:
     name: str
     zone: Zone
-    schedule_name: str  # should be reference
+    schedule: Union[ScheduleCompact, ScheduleConstant]
     design_volume_flow_rate: float
 
 
@@ -158,15 +158,15 @@ class Infiltration:
 class Person:
     name: str
     zone: Zone
-    in_zone_schedule_name: str
-    activity_schedule_name: str
+    in_zone_schedule: Union[ScheduleCompact, ScheduleConstant]
+    activity_schedule: Union[ScheduleCompact, ScheduleConstant]
 
 
 @dataclass()
 class Lights:
     name: str
     zone: Zone
-    schedule_name: str
+    schedule: Union[ScheduleCompact, ScheduleConstant]
     design_level: float  # electrical input to the light
     fraction_radiant: float = 0.59  # long-wave fraction
     fraction_visible: float = 0.2  # short-wave fraction
@@ -177,7 +177,7 @@ class Lights:
 class Equipment:
     name: str
     zone: Zone
-    schedule_name: str
+    schedule: Union[ScheduleCompact, ScheduleConstant]
     design_level: float
     fraction_radiant: float = 0.3
     fraction_latent: float = 0.0

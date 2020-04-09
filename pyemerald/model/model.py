@@ -817,131 +817,197 @@ class Model:
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
         self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
         self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
-        all_schedules = [
+        all_constant_schedules = [
             self.schedule_infiltration,
             self.schedule_activity_dad, self.schedule_activity_mom,
             self.schedule_equipment_office_computers,
             self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point
         ]
-        for s in all_schedules:
+        for s in all_constant_schedules:
             self._add_idf_object('Schedule:Constant', s.name, s.type_limits.name, s.value)
+        self.schedule_occupancy_dad = ScheduleCompact(
+            'ScheduleDadInMainZone', self.schedule_type_frac, [
+                'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
+                'Through: 09/30',
+                'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.7,
+                'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+            ]
+        )
+        self.schedule_occupancy_mom = ScheduleCompact(
+            'ScheduleMomInMainZone', self.schedule_type_frac, [
+                'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
+                'Through: 09/30',
+                'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.7,
+                'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+            ]
+        )
+        self.schedule_lights_dax = ScheduleCompact(
+            'DaxLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_gibs = ScheduleCompact(
+            'GibsLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_main_bath = ScheduleCompact(
+            'MainBathLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.3, 'Until: 09:00', 0.3,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.3
+            ]
+        )
+        self.schedule_lights_study = ScheduleCompact(
+            'StudyLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_kids_hall = ScheduleCompact(
+            'HallLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_entry = ScheduleCompact(
+            'EntryLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_living = ScheduleCompact(
+            'LivingLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_office = ScheduleCompact(
+            'OfficeLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_kitchen = ScheduleCompact(
+            'KitchenLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_dining = ScheduleCompact(
+            'DiningLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_master_bedroom = ScheduleCompact(
+            'MasterBedroomLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_master_bath = ScheduleCompact(
+            'MasterBathLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_mom_closet = ScheduleCompact(
+            'MomClosetLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_dad_closet = ScheduleCompact(
+            'DadClosetLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_utility = ScheduleCompact(
+            'UtilityLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_lights_garage = ScheduleCompact(
+            'GarageLightSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 07:00', 0.05, 'Until: 09:00', 0.2,
+                'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+            ]
+        )
+        self.schedule_equip_dishwasher = ScheduleCompact(
+            'DishwasherSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 02:00', 0, 'Until: 04:00', 1, 'Until: 24:00', 0
+            ]
+        )
+        all_compact_schedules = [
+            self.schedule_occupancy_dad, self.schedule_occupancy_mom,
+            self.schedule_lights_dax, self.schedule_lights_gibs,
+            self.schedule_lights_main_bath,
+            self.schedule_lights_study,
+            self.schedule_lights_kids_hall,
+            self.schedule_lights_entry,
+            self.schedule_lights_living,
+            self.schedule_lights_office,
+            self.schedule_lights_kitchen,
+            self.schedule_lights_dining,
+            self.schedule_lights_master_bedroom, self.schedule_lights_master_bath,
+            self.schedule_lights_mom_closet, self.schedule_lights_dad_closet,
+            self.schedule_lights_utility,
+            self.schedule_lights_garage,
+            self.schedule_equip_dishwasher,
+        ]
+        for s in all_compact_schedules:
+            self._add_idf_object('Schedule:Compact', s.name, s.type_limits.name, *s.fields)
 
     def _setup_internal_gains(self):
         # infiltration
-        self.infiltration_zone = Infiltration('Main Zone Infiltration', self.zone_indoor, 'InfiltrationSchedule', 0.010)
-        self.infiltration_garage = Infiltration('Garage Infiltration', self.zone_garage, 'InfiltrationSchedule', 0.028)
+        self.infiltration_zone = Infiltration(
+            'Main Zone Infiltration', self.zone_indoor, self.schedule_infiltration, 0.010
+        )
+        self.infiltration_garage = Infiltration(
+            'Garage Infiltration', self.zone_garage, self.schedule_infiltration, 0.028
+        )
         for i in [self.infiltration_zone, self.infiltration_garage]:
             self._add_idf_object(
                 'ZoneInfiltration:DesignFlowRate',
-                i.name, i.zone.name, i.schedule_name,
+                i.name, i.zone.name, i.schedule.name,
                 'Flow/Zone', i.design_volume_flow_rate, '', '', '',
                 0, 0, 0.2237, 0
             )
         # people
-        self._add_idf_object(
-            'Schedule:Compact', 'ScheduleDadInMainZone', 'Fraction',
-            'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
-            'Through: 09/30',
-            'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
-            'For: AllOtherDays', 'Until: 24:00', 0.7,
-            'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+        self.person_dad_main_zone = Person(
+            'Dad', self.zone_indoor, self.schedule_occupancy_dad, self.schedule_activity_dad
         )
-        self.person_dad_main_zone = Person('Dad', self.zone_indoor, 'ScheduleDadInMainZone', 'ScheduleDadActivity')
-        self._add_idf_object(
-            'Schedule:Compact', 'ScheduleMomInMainZone', 'Fraction',
-            'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
-            'Through: 09/30',
-            'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
-            'For: AllOtherDays', 'Until: 24:00', 0.7,
-            'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+        self.person_mom_main_zone = Person(
+            'Mom', self.zone_indoor, self.schedule_occupancy_mom, self.schedule_activity_mom
         )
-        self.person_mom_main_zone = Person('Mom', self.zone_indoor, 'ScheduleMomInMainZone', 'ScheduleMomActivity')
         for p in [self.person_dad_main_zone, self.person_mom_main_zone]:
             self._add_idf_object(
-                'People', p.name, p.zone.name, p.in_zone_schedule_name,
-                'People', 1, '', '', 0.3, '', p.activity_schedule_name
+                'People', p.name, p.zone.name, p.in_zone_schedule.name,
+                'People', 1, '', '', 0.3, '', p.activity_schedule.name
             )
         # interior lights
-        self._add_idf_object(
-            'Schedule:Compact', 'DaxLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_dax = Lights('Dax Lights', self.zone_indoor, 'DaxLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'GibsLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_gibs = Lights('Gibs Lights', self.zone_indoor, 'GibsLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'MainBathLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_main_bath = Lights('Main Bath Lights', self.zone_indoor, 'MainBathLightSchedule', 120)
-        self._add_idf_object(
-            'Schedule:Compact', 'StudyLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.30, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.30
-        )
-        self.lights_study = Lights('Study Lights', self.zone_indoor, 'StudyLightSchedule', 60)
-        self._add_idf_object(
-            'Schedule:Compact', 'HallLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_hall = Lights('Hall Lights', self.zone_indoor, 'HallLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'EntryLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_entry = Lights('Entry Lights', self.zone_indoor, 'EntryLightSchedule', 120)
-        self._add_idf_object(
-            'Schedule:Compact', 'LivingLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_living = Lights('Living Room Lights', self.zone_indoor, 'LivingLightSchedule', 200)
-        self._add_idf_object(
-            'Schedule:Compact', 'OfficeLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_office = Lights('Office Lights', self.zone_indoor, 'OfficeLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'KitchenLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_kitchen = Lights('Kitchen Lights', self.zone_indoor, 'KitchenLightSchedule', 150)
-        self._add_idf_object(
-            'Schedule:Compact', 'DiningLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_dining = Lights('Dining Room Lights', self.zone_indoor, 'DiningLightSchedule', 120)
-        self._add_idf_object(
-            'Schedule:Compact', 'MasterBedroomLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_master_bed = Lights('Master Bedroom Lights', self.zone_indoor, 'MasterBedroomLightSchedule', 120)
-        self._add_idf_object(
-            'Schedule:Compact', 'MasterBathLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
-        )
-        self.lights_master_bath = Lights('Master Bathroom Lights', self.zone_indoor, 'MasterBathLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'MomClosetLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.1, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
-        )
-        self.lights_mom_closet = Lights('Mom Closet Lights', self.zone_indoor, 'MomClosetLightSchedule', 60)
-        self._add_idf_object(
-            'Schedule:Compact', 'DadClosetLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.1, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
-        )
-        self.lights_dad_closet = Lights('Dad Closet Lights', self.zone_indoor, 'DadClosetLightSchedule', 60)
-        self._add_idf_object(
-            'Schedule:Compact', 'UtilityLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
-        )
-        self.lights_utility = Lights('Utility Lights', self.zone_indoor, 'UtilityLightSchedule', 100)
-        self._add_idf_object(
-            'Schedule:Compact', 'GarageLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
-        )
-        self.lights_garage = Lights('Garage Lights', self.zone_indoor, 'GarageLightSchedule', 200)
+        self.lights_dax = Lights('Dax Lights', self.zone_indoor, self.schedule_lights_dax, 100)
+        self.lights_gibs = Lights('Gibs Lights', self.zone_indoor, self.schedule_lights_gibs, 100)
+        self.lights_main_bath = Lights('Main Bath Lights', self.zone_indoor, self.schedule_lights_main_bath, 120)
+        self.lights_study = Lights('Study Lights', self.zone_indoor, self.schedule_lights_study, 60)
+        self.lights_hall = Lights('Hall Lights', self.zone_indoor, self.schedule_lights_kids_hall, 100)
+        self.lights_entry = Lights('Entry Lights', self.zone_indoor, self.schedule_lights_entry, 120)
+        self.lights_living = Lights('Living Room Lights', self.zone_indoor, self.schedule_lights_living, 200)
+        self.lights_office = Lights('Office Lights', self.zone_indoor, self.schedule_lights_office, 100)
+        self.lights_kitchen = Lights('Kitchen Lights', self.zone_indoor, self.schedule_lights_kitchen, 150)
+        self.lights_dining = Lights('Dining Room Lights', self.zone_indoor, self.schedule_lights_dining, 120)
+        self.lights_master_bed = Lights('Master Bed Lights', self.zone_indoor, self.schedule_lights_master_bedroom, 120)
+        self.lights_master_bath = Lights('Master Bath Lights', self.zone_indoor, self.schedule_lights_master_bath, 100)
+        self.lights_mom_closet = Lights('Mom Closet Lights', self.zone_indoor, self.schedule_lights_mom_closet, 60)
+        self.lights_dad_closet = Lights('Dad Closet Lights', self.zone_indoor, self.schedule_lights_dad_closet, 60)
+        self.lights_utility = Lights('Utility Lights', self.zone_indoor, self.schedule_lights_utility, 100)
+        self.lights_garage = Lights('Garage Lights', self.zone_indoor, self.schedule_lights_garage, 200)
         all_interior_lights = [
             self.lights_dax,
             self.lights_gibs,
@@ -962,22 +1028,22 @@ class Model:
         ]
         for light in all_interior_lights:
             self._add_idf_object(
-                'Lights', light.name, light.zone.name, light.schedule_name, 'LightingLevel', light.design_level,
+                'Lights', light.name, light.zone.name, light.schedule.name, 'LightingLevel', light.design_level,
                 '', '', 0.0, light.fraction_radiant, light.fraction_visible, 0, 'GeneralLights'
             )
-        self.equip_office_comps = Equipment('Office computers', self.zone_indoor, 'OfficeCompSchedule', 400)
-        self._add_idf_object(
-            'Schedule:Compact', 'DishwasherSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
-            'Until: 02:00', 0, 'Until: 04:00', 1, 'Until: 24:00', 0
+        self.equip_office_comps = Equipment(
+            'Office computers', self.zone_indoor, self.schedule_equipment_office_computers, 400
         )
-        self.equip_kitchen_dishwasher = Equipment('Dishwasher', self.zone_indoor, 'DishwasherSchedule', 300, 0.3, 0.4)
+        self.equip_kitchen_dishwasher = Equipment(
+            'Dishwasher', self.zone_indoor, self.schedule_equip_dishwasher, 300, 0.3, 0.4
+        )
         all_equipment = [
             self.equip_office_comps,
             self.equip_kitchen_dishwasher
         ]
         for equip in all_equipment:
             self._add_idf_object(
-                'ElectricEquipment', equip.name, equip.zone.name, equip.schedule_name, 'EquipmentLevel',
+                'ElectricEquipment', equip.name, equip.zone.name, equip.schedule.name, 'EquipmentLevel',
                 equip.design_level, '', '', equip.fraction_latent, equip.fraction_radiant, 0
             )
 
