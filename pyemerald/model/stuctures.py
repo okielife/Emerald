@@ -37,6 +37,28 @@ class BoundaryConditionType(Enum):
 
 
 @dataclass()
+class ScheduleTypeLimit:
+    name: str
+    min: float = -1
+    max: float = -1
+    discrete_or_continuous: str = 'Continuous'
+
+
+@dataclass()
+class ScheduleConstant:
+    name: str
+    type_limits: ScheduleTypeLimit
+    value: float
+
+
+@dataclass()
+class ScheduleCompact:
+    name: str
+    type_limits: ScheduleTypeLimit
+    fields: List[Union[str, float]]
+
+
+@dataclass()
 class Zone:
     name: str
 
@@ -95,7 +117,6 @@ class Surface:
     wind_exposed: bool
     sun_exposed: bool
     vertices: List[Vertex3D]
-    # sub_surfaces: List[SubSurface]
 
 
 @dataclass()
@@ -123,3 +144,40 @@ class OutputVariable:
 @dataclass()
 class OutputMeter:
     meter_name: str
+
+
+@dataclass()
+class Infiltration:
+    name: str
+    zone: Zone
+    schedule: Union[ScheduleCompact, ScheduleConstant]
+    design_volume_flow_rate: float
+
+
+@dataclass()
+class Person:
+    name: str
+    zone: Zone
+    in_zone_schedule: Union[ScheduleCompact, ScheduleConstant]
+    activity_schedule: Union[ScheduleCompact, ScheduleConstant]
+
+
+@dataclass()
+class Lights:
+    name: str
+    zone: Zone
+    schedule: Union[ScheduleCompact, ScheduleConstant]
+    design_level: float  # electrical input to the light
+    fraction_radiant: float = 0.59  # long-wave fraction
+    fraction_visible: float = 0.2  # short-wave fraction
+    # note that heat gain fraction is 1.0 minus frac radiant minus frac visible
+
+
+@dataclass()
+class Equipment:
+    name: str
+    zone: Zone
+    schedule: Union[ScheduleCompact, ScheduleConstant]
+    design_level: float
+    fraction_radiant: float = 0.3
+    fraction_latent: float = 0.0
