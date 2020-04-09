@@ -4,11 +4,15 @@ from pyemerald.model.stuctures import (
     BoundaryConditionType,
     Construction,
     Door,
+    Equipment,
+    Infiltration,
+    Lights,
     Material,
     MaterialWindowGas,
     MaterialWindowGlazing,
     OutputMeter,
     OutputVariable,
+    Person,
     Surface,
     SurfaceType,
     Vertex2D,
@@ -25,9 +29,9 @@ class Model:
         # order does matter here, materials need to be declared before constructions, etc.
         self._setup_settings()
         self._setup_location()
-        self._setup_schedules()
-        self._setup_internal_gains()
+        self._setup_schedule_types()
         self._setup_zones()
+        self._setup_internal_gains()
         self._setup_materials()
         self._setup_constructions()
         self._setup_floor_vertices()
@@ -791,14 +795,168 @@ class Model:
         self._add_idf_object('Output:SQLite', 'SimpleAndTabular')
         self._add_idf_object('Output:Diagnostics', 'DisplayExtraWarnings', 'DisplayUnusedSchedules')
 
-    def _setup_schedules(self):
+    def _setup_schedule_types(self):
         self._add_idf_object('ScheduleTypeLimits', 'AnyNumber')
-        self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
-        self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
-        self._add_idf_object('Schedule:Constant', 'ScheduleDualSetPoint', 'AnyNumber', 4)
+        self._add_idf_object('ScheduleTypeLimits', 'Fraction', 0, 1, 'Continuous')
 
     def _setup_internal_gains(self):
-        pass
+        # infiltration
+        self._add_idf_object('Schedule:Constant', 'InfiltrationSchedule', 'Fraction', 1)
+        self.infiltration_zone = Infiltration('Main Zone Infiltration', self.zone_indoor, 'InfiltrationSchedule', 0.010)
+        self.infiltration_garage = Infiltration('Garage Infiltration', self.zone_garage, 'InfiltrationSchedule', 0.028)
+        for i in [self.infiltration_zone, self.infiltration_garage]:
+            self._add_idf_object(
+                'ZoneInfiltration:DesignFlowRate',
+                i.name, i.zone.name, i.schedule_name,
+                'Flow/Zone', i.design_volume_flow_rate, '', '', '',
+                0, 0, 0.2237, 0
+            )
+        # people
+        self._add_idf_object(
+            'Schedule:Compact', 'ScheduleDadInMainZone', 'Fraction',
+            'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
+            'Through: 09/30',
+            'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
+            'For: AllOtherDays', 'Until: 24:00', 0.7,
+            'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+        )
+        self._add_idf_object('Schedule:Constant', 'ScheduleDadActivity', 'AnyNumber', 115.0)
+        self.person_dad_main_zone = Person('Dad', self.zone_indoor, 'ScheduleDadInMainZone', 'ScheduleDadActivity')
+        self._add_idf_object(
+            'Schedule:Compact', 'ScheduleMomInMainZone', 'Fraction',
+            'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
+            'Through: 09/30',
+            'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
+            'For: AllOtherDays', 'Until: 24:00', 0.7,
+            'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+        )
+        self._add_idf_object('Schedule:Constant', 'ScheduleMomActivity', 'AnyNumber', 100.0)
+        self.person_mom_main_zone = Person('Mom', self.zone_indoor, 'ScheduleMomInMainZone', 'ScheduleMomActivity')
+        for p in [self.person_dad_main_zone, self.person_mom_main_zone]:
+            self._add_idf_object(
+                'People', p.name, p.zone.name, p.in_zone_schedule_name,
+                'People', 1, '', '', 0.3, '', p.activity_schedule_name
+            )
+        # interior lights
+        self._add_idf_object(
+            'Schedule:Compact', 'DaxLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_dax = Lights('Dax Lights', self.zone_indoor, 'DaxLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'GibsLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_gibs = Lights('Gibs Lights', self.zone_indoor, 'GibsLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'MainBathLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_main_bath = Lights('Main Bath Lights', self.zone_indoor, 'MainBathLightSchedule', 120)
+        self._add_idf_object(
+            'Schedule:Compact', 'StudyLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.30, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.30
+        )
+        self.lights_study = Lights('Study Lights', self.zone_indoor, 'StudyLightSchedule', 60)
+        self._add_idf_object(
+            'Schedule:Compact', 'HallLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_hall = Lights('Hall Lights', self.zone_indoor, 'HallLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'EntryLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_entry = Lights('Entry Lights', self.zone_indoor, 'EntryLightSchedule', 120)
+        self._add_idf_object(
+            'Schedule:Compact', 'LivingLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_living = Lights('Living Room Lights', self.zone_indoor, 'LivingLightSchedule', 200)
+        self._add_idf_object(
+            'Schedule:Compact', 'OfficeLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_office = Lights('Office Lights', self.zone_indoor, 'OfficeLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'KitchenLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_kitchen = Lights('Kitchen Lights', self.zone_indoor, 'KitchenLightSchedule', 150)
+        self._add_idf_object(
+            'Schedule:Compact', 'DiningLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_dining = Lights('Dining Room Lights', self.zone_indoor, 'DiningLightSchedule', 120)
+        self._add_idf_object(
+            'Schedule:Compact', 'MasterBedroomLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_master_bed = Lights('Master Bedroom Lights', self.zone_indoor, 'MasterBedroomLightSchedule', 120)
+        self._add_idf_object(
+            'Schedule:Compact', 'MasterBathLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.5, 'Until: 24:00', 0.05
+        )
+        self.lights_master_bath = Lights('Master Bathroom Lights', self.zone_indoor, 'MasterBathLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'MomClosetLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.1, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
+        )
+        self.lights_mom_closet = Lights('Mom Closet Lights', self.zone_indoor, 'MomClosetLightSchedule', 60)
+        self._add_idf_object(
+            'Schedule:Compact', 'DadClosetLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.1, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
+        )
+        self.lights_dad_closet = Lights('Dad Closet Lights', self.zone_indoor, 'DadClosetLightSchedule', 60)
+        self._add_idf_object(
+            'Schedule:Compact', 'UtilityLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
+        )
+        self.lights_utility = Lights('Utility Lights', self.zone_indoor, 'UtilityLightSchedule', 100)
+        self._add_idf_object(
+            'Schedule:Compact', 'GarageLightSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 07:00', 0.05, 'Until: 09:00', 0.2, 'Until: 18:00', 0.05, 'Until: 21:00', 0.2, 'Until: 24:00', 0.05
+        )
+        self.lights_garage = Lights('Garage Lights', self.zone_indoor, 'GarageLightSchedule', 200)
+        all_interior_lights = [
+            self.lights_dax,
+            self.lights_gibs,
+            self.lights_main_bath,
+            self.lights_study,
+            self.lights_hall,
+            self.lights_entry,
+            self.lights_living,
+            self.lights_office,
+            self.lights_kitchen,
+            self.lights_dining,
+            self.lights_master_bed,
+            self.lights_master_bath,
+            self.lights_mom_closet,
+            self.lights_dad_closet,
+            self.lights_utility,
+            self.lights_garage,
+        ]
+        for light in all_interior_lights:
+            self._add_idf_object(
+                'Lights', light.name, light.zone.name, light.schedule_name, 'LightingLevel', light.design_level,
+                '', '', 0.0, light.fraction_radiant, light.fraction_visible, 0, 'GeneralLights'
+            )
+        self._add_idf_object('Schedule:Constant', 'OfficeCompSchedule', 'Fraction', 1.0)
+        self.equip_office_comps = Equipment('Office computers', self.zone_indoor, 'OfficeCompSchedule', 400)
+        self._add_idf_object(
+            'Schedule:Compact', 'DishwasherSchedule', 'Fraction', 'Through: 12/31', 'For: AllDays',
+            'Until: 02:00', 0, 'Until: 04:00', 1, 'Until: 24:00', 0
+        )
+        self.equip_kitchen_dishwasher = Equipment('Dishwasher', self.zone_indoor, 'DishwasherSchedule', 300, 0.3, 0.4)
+        all_equipment = [
+            self.equip_office_comps,
+            self.equip_kitchen_dishwasher
+        ]
+        for equip in all_equipment:
+            self._add_idf_object(
+                'ElectricEquipment', equip.name, equip.zone.name, equip.schedule_name, 'EquipmentLevel',
+                equip.design_level, '', '', equip.fraction_latent, equip.fraction_radiant, 0
+            )
 
     def _water_use(self):
         # water heater, water usage, etc
@@ -850,13 +1008,13 @@ class Model:
         #   Outdoor Unit Model Number: CARRIER  CH14NB048****A
         #   Brand Name: CARRIER
         #   Indoor Unit Model Number: FB4CNF048L+TXV
-        #   Cooling Capacity (A2) - Single or High Stage (95F),btuh: 45500
+        #   Cooling Capacity (A2) - Single or High Stage (95F), Btu/h: 45500
         #   SEER: 14.00
         #   EER (A2) (95F): 11.70
-        #   Heating Capacity (H12) - (47F),btuh: 44500
+        #   Heating Capacity (H12) - (47F), Btu/h: 44500
         #   HSPF (Region IV): 8.20
-        #   Heating Capacity (H32) - (17F),btuh: 27800
-        #   Indoor Full-Load Air Volume Rate (A2 SCFM): 1400
+        #   Heating Capacity (H32) - (17F), Btu/h: 27800
+        #   Indoor Full-Load Air Volume Rate (A2 StandardCFM): 1400
 
         # set up some system properties
         system_air_volume_flow_rate_cfm = 1400  # CFM
@@ -876,6 +1034,9 @@ class Model:
         rated_shr = 0.7  # assumed
         supplemental_heater_capacity_watts = 10000  # assumed
         defrost_time_period = 0.06
+        self._add_idf_object('Schedule:Constant', 'HeatingSetpoint', 'AnyNumber', 21.1)
+        self._add_idf_object('Schedule:Constant', 'CoolingSetpoint', 'AnyNumber', 23.9)
+        self._add_idf_object('Schedule:Constant', 'ScheduleDualSetPoint', 'AnyNumber', 4)
         self._add_idf_object(
             'ThermostatSetpoint:DualSetpoint',
             'ThermostatControl', 'HeatingSetpoint', 'CoolingSetpoint'

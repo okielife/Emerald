@@ -95,7 +95,6 @@ class Surface:
     wind_exposed: bool
     sun_exposed: bool
     vertices: List[Vertex3D]
-    # sub_surfaces: List[SubSurface]
 
 
 @dataclass()
@@ -123,3 +122,40 @@ class OutputVariable:
 @dataclass()
 class OutputMeter:
     meter_name: str
+
+
+@dataclass()
+class Infiltration:
+    name: str
+    zone: Zone
+    schedule_name: str  # should be reference
+    design_volume_flow_rate: float
+
+
+@dataclass()
+class Person:
+    name: str
+    zone: Zone
+    in_zone_schedule_name: str
+    activity_schedule_name: str
+
+
+@dataclass()
+class Lights:
+    name: str
+    zone: Zone
+    schedule_name: str
+    design_level: float  # electrical input to the light
+    fraction_radiant: float = 0.59  # long-wave fraction
+    fraction_visible: float = 0.2  # short-wave fraction
+    # note that heat gain fraction is 1.0 minus frac radiant minus frac visible
+
+
+@dataclass()
+class Equipment:
+    name: str
+    zone: Zone
+    schedule_name: str
+    design_level: float
+    fraction_radiant: float = 0.3
+    fraction_latent: float = 0.0
