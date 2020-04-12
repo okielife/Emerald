@@ -99,10 +99,23 @@ class Vertex2D:
     y: float
 
 
-@dataclass()
 class Vertex3D:
     part_2d: Vertex2D
     height: float
+
+    @staticmethod
+    def from_vertex_and_height(_part_2d: Vertex2D, _height: float) -> 'Vertex3D':
+        v = Vertex3D()
+        v.part_2d = _part_2d
+        v.height = _height
+        return v
+
+    @staticmethod
+    def from_x_y_z(_x: float, _y: float, _height: float) -> 'Vertex3D':
+        v = Vertex3D()
+        v.part_2d = Vertex2D('no_label', _x, _y)
+        v.height = _height
+        return v
 
 
 @dataclass()
