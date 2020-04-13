@@ -32,8 +32,6 @@ class HourlyWeatherDataPoint:
             num_valid_points += 1
             relative_humidity_sum += relative_humidity_percent
             air_temp_c = float(tokens[4])  # 2.7
-            if air_temp_c < -20 or air_temp_c > 60:
-                i = 1
             air_temp_sum += air_temp_c
             wind_speed_m_s = float(tokens[5])  # 6.6
             wind_speed_sum += wind_speed_m_s
@@ -87,8 +85,6 @@ class WeatherManager:
     def dew_point(temperature: float, relative_humidity: float) -> float:
         if relative_humidity > 50:
             return temperature - ((100 - relative_humidity)/5.0)
-        if 15.924 < temperature < 15.925 and 44.7 < relative_humidity < 44.8:
-            i = 1
         for t in range(-40, 40):
             for tenth in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
                 for hundredth in [0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09]:
