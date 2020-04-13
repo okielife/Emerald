@@ -1148,6 +1148,8 @@ class Model:
         self.schedule_infiltration = ScheduleConstant('InfiltrationSchedule', self.schedule_type_frac, 1)
         self.schedule_activity_dad = ScheduleConstant('ScheduleDadActivity', self.schedule_type_any, 115)
         self.schedule_activity_mom = ScheduleConstant('ScheduleMomActivity', self.schedule_type_any, 100)
+        self.schedule_activity_gibs = ScheduleConstant('ScheduleGibsActivity', self.schedule_type_any, 115)
+        self.schedule_activity_dax = ScheduleConstant('ScheduleDaxActivity', self.schedule_type_any, 115)
         self.schedule_equipment_office_computers = ScheduleConstant('OfficeCompSchedule', self.schedule_type_frac, 1.0)
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
         self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
@@ -1155,6 +1157,7 @@ class Model:
         all_constant_schedules = [
             self.schedule_infiltration,
             self.schedule_activity_dad, self.schedule_activity_mom,
+            self.schedule_activity_gibs, self.schedule_activity_dax,
             self.schedule_equipment_office_computers,
             self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point
         ]
@@ -1176,6 +1179,30 @@ class Model:
                 'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
                 'For: AllOtherDays', 'Until: 24:00', 0.7,
                 'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+            ]
+        )
+        self.schedule_occupancy_gibs = ScheduleCompact(
+            'ScheduleGibsInMainZone', self.schedule_type_frac, [
+                'Through: 05/15',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+                'Through: 09/01',
+                'For: AllDays', 'Until: 24:00', 0.7,
+                'Through: 12/31',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+            ]
+        )
+        self.schedule_occupancy_dax = ScheduleCompact(
+            'ScheduleDaxInMainZone', self.schedule_type_frac, [
+                'Through: 05/15',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+                'Through: 09/01',
+                'For: AllDays', 'Until: 24:00', 0.7,
+                'Through: 12/31',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
             ]
         )
         self.schedule_lights_dax = ScheduleCompact(
@@ -1281,6 +1308,7 @@ class Model:
         )
         all_compact_schedules = [
             self.schedule_occupancy_dad, self.schedule_occupancy_mom,
+            self.schedule_occupancy_gibs, self.schedule_occupancy_dax,
             self.schedule_lights_dax, self.schedule_lights_gibs,
             self.schedule_lights_main_bath,
             self.schedule_lights_study,
@@ -1334,7 +1362,16 @@ class Model:
         self.person_mom_main_zone = Person(
             'Mom', self.zone_indoor, self.schedule_occupancy_mom, self.schedule_activity_mom
         )
-        for p in [self.person_dad_main_zone, self.person_mom_main_zone]:
+        self.person_gibs_main_zone = Person(
+            'Gibs', self.zone_indoor, self.schedule_occupancy_gibs, self.schedule_activity_gibs
+        )
+        self.person_dax_main_zone = Person(
+            'Dax', self.zone_indoor, self.schedule_occupancy_dax, self.schedule_activity_dax
+        )
+        all_people = [
+            self.person_dad_main_zone, self.person_mom_main_zone, self.person_gibs_main_zone, self.person_dax_main_zone
+        ]
+        for p in all_people:
             self._add_idf_object(
                 'People', p.name, p.zone.name, p.in_zone_schedule.name,
                 'People', 1, '', '', 0.3, '', p.activity_schedule.name
