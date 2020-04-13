@@ -1154,12 +1154,15 @@ class Model:
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
         self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
         self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
+        self.schedule_equip_fridge = ScheduleConstant('FridgeSchedule', self.schedule_type_any, 1.0)
+        self.schedule_equip_other_kitchen = ScheduleConstant('OtherKitchenSchedule', self.schedule_type_any, 1.0)
         all_constant_schedules = [
             self.schedule_infiltration,
             self.schedule_activity_dad, self.schedule_activity_mom,
             self.schedule_activity_gibs, self.schedule_activity_dax,
             self.schedule_equipment_office_computers,
-            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point
+            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point,
+            self.schedule_equip_fridge, self.schedule_equip_other_kitchen
         ]
         for s in all_constant_schedules:
             self._add_idf_object('Schedule:Constant', s.name, s.type_limits.name, s.value)
@@ -1306,6 +1309,11 @@ class Model:
                 'Through: 12/31', 'For: AllDays', 'Until: 02:00', 0, 'Until: 04:00', 1, 'Until: 24:00', 0
             ]
         )
+        self.schedule_equip_oven = ScheduleCompact(
+            'OvenSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 16:30', 0.1, 'Until: 18:00', 0.8, 'Until: 24:00', 0
+            ]
+        )
         all_compact_schedules = [
             self.schedule_occupancy_dad, self.schedule_occupancy_mom,
             self.schedule_occupancy_gibs, self.schedule_occupancy_dax,
@@ -1322,7 +1330,7 @@ class Model:
             self.schedule_lights_mom_closet, self.schedule_lights_dad_closet,
             self.schedule_lights_utility,
             self.schedule_lights_garage,
-            self.schedule_equip_dishwasher,
+            self.schedule_equip_dishwasher, self.schedule_equip_oven
         ]
         for s in all_compact_schedules:
             self._add_idf_object('Schedule:Compact', s.name, s.type_limits.name, *s.fields)
@@ -1416,15 +1424,27 @@ class Model:
                 'Lights', light.name, light.zone.name, light.schedule.name, 'LightingLevel', light.design_level,
                 '', '', 0.0, light.fraction_radiant, light.fraction_visible, 0, 'GeneralLights'
             )
-        self.equip_office_comps = Equipment(
-            'Office computers', self.zone_indoor, self.schedule_equipment_office_computers, 500
+        self.equip_office_comps = Equipment(  # incl both comps, router, printer, speakers
+            'Office computers', self.zone_indoor, self.schedule_equipment_office_computers, 600
         )
         self.equip_kitchen_dishwasher = Equipment(
             'Dishwasher', self.zone_indoor, self.schedule_equip_dishwasher, 300, 0.3, 0.4
         )
+        self.equip_kitchen_oven = Equipment(
+            'StoveOven', self.zone_indoor, self.schedule_equip_oven, 5000, 0.3, 0.1
+        )
+        self.equip_kitchen_fridge = Equipment(
+            'Fridge', self.zone_indoor, self.schedule_equip_fridge, 100, 0.3, 0.1
+        )
+        self.equip_kitchen_others = Equipment(  # blender, coffee maker, etc.
+            'OtherKitchenEquipment', self.zone_indoor, self.schedule_equip_other_kitchen, 100, 0.3, 0.0
+        )
         all_equipment = [
             self.equip_office_comps,
-            self.equip_kitchen_dishwasher
+            self.equip_kitchen_dishwasher,
+            self.equip_kitchen_oven,
+            self.equip_kitchen_fridge,
+            self.equip_kitchen_others
         ]
         for equip in all_equipment:
             self._add_idf_object(
@@ -1580,24 +1600,24 @@ class Model:
             min_outdoor_temp_for_compressor, '', '', '', '', '', '', defrost_time_period
         )
         self._add_idf_object(
-            'Curve:Cubic',
-            'HtgCapFT', 0.758746, 0.027626, 0.000148716, 0.0000034992, -20, 20
-        )
-        self._add_idf_object(
-            'Curve:Cubic',
-            'HtgCapFF', 0.84, 0.16, 0.0, 0.0, 0.5, 1.5
-        )
-        self._add_idf_object(
-            'Curve:Cubic',
-            'HtgEirFT', 1.19248, -0.0300438, 0.00103745, -0.000023328, -20, 20
+            'Curve:Biquadratic',
+            'HtgCapFT', 0.876825, -0.002955, -0.000058, 0.025335, 0.000196, -0.000043, -20, 20, -20, 20
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HtgEirFF', 1.3824, -0.4336, 0.0512, 0.0, 1.0
+            'HtgCapFF', 0.694045465, 0.474207981, -0.168253446, 0.5, 1.5
+        )
+        self._add_idf_object(
+            'Curve:Biquadratic',
+            'HtgEirFT', 0.704658, 0.008767, 0.000625, -0.009037, 0.000738, -0.001025, -20, 20, -20, 20
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HtgPLF', 0.75, 0.25, 0.0, 0.0, 1.0
+            'HtgEirFF', 2.185418751, -1.942827919, 0.757409168, 0.0, 1.0
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HtgPLF', 0.9, 0.1, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'Curve:Biquadratic',
@@ -1615,23 +1635,23 @@ class Model:
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'ClgCapFT', 0.94258779, 0.00954335, 0.0006838, -0.01104267, 0.00000525, -0.0000097, 12.77, 23.88, 18.0, 46.1
+            'ClgCapFT', 1.55736, -0.074448, 0.003099, 0.00146, -0.000041, -0.000427, 0, 50, 0, 50
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgCapFF', 0.8, 0.2, 0.0, 0.5, 1.5
+            'ClgCapFF', 0.718664047, 0.41797409, -0.136638137, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'ClgEirFT', 0.34241441, 0.03488501, -0.000624, 0.00497722, 0.00043795, -0.00072803, 12.77, 23.88, 18.0, 46.1
+            'ClgEirFT', -0.350448, 0.11681, -0.0034, -0.001226, 0.000601, -0.000467, 12.77, 23.88, 18.0, 46.1
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgEirFF', 1.1552, -0.1808, 0.0256, 0.5, 1.5
+            'ClgEirFF', 1.143487507, -0.13943972, -0.004047787, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgPLF', 0.85, 0.15, 0.0, 0.0, 1.0
+            'ClgPLF', 0.9, 0.1, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'OutdoorAir:Node',
