@@ -59,11 +59,11 @@ class EPWFile:
     def __init__(self, file_path: Path):
         self.header_lines = []
         self.data_rows = []
-        with open(str(file_path)) as f:
+        with open(str(file_path)) as f_epw:
             for _ in range(8):
-                self.header_lines.append(f.readline().strip())
+                self.header_lines.append(f_epw.readline().strip())
             for _ in range(8760):
-                line_in = f.readline().strip()
+                line_in = f_epw.readline().strip()
                 tokens = line_in.split(',')
                 self.data_rows.append(tokens)
 
@@ -106,8 +106,8 @@ class WeatherManager:
         all_raw_files = sorted([x for x in raw_data_dir.iterdir() if x.is_file() and x.name.endswith('kin2.txt')])
         raw_hourly_data = []
         for raw_file in all_raw_files:
-            with open(str(raw_file)) as f:
-                lines = f.readlines()
+            with open(str(raw_file)) as f_raw:
+                lines = f_raw.readlines()
                 starting_line_num = 3
                 for i in range(24):
                     raw_hourly_data.append(HourlyWeatherDataPoint(
@@ -116,13 +116,7 @@ class WeatherManager:
                     ))
                     starting_line_num += 12
         # it looks like the data is not affected by daylight savings time, the sunrises the same hour through DST change
-        with open('/tmp/dry_bulb.csv', 'w') as f:
-            for raw_data in raw_hourly_data:
-                f.write(str(raw_data.average_air_temp) + '\n')
-        with open('/tmp/solar.csv', 'w') as f:
-            for raw_data in raw_hourly_data:
-                f.write(str(raw_data.average_solar) + '\n')
-        # need to shift by 6 hours to get local time
+        # so just need to shift by 6 hours to get local time
         aligned_data = []
         for i in range(6, 8760):
             aligned_data.append(raw_hourly_data[i])
