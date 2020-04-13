@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import List
 
 from pyemerald.model.stuctures import (
@@ -1300,13 +1301,26 @@ class Model:
 
     def _setup_internal_gains(self):
         # infiltration
+        assumed_effective_leakage_area = 500  # cm^2
+        assumed_stack_coefficient = 0.000145  # single story house value, Handbook 2017 (pg 16.24)
+        infiltration_house_temp = 21.1  # at design infiltration conditions
+        infiltration_outdoor_temp = -11  # at design infiltration conditions
+        delta_t = abs(infiltration_house_temp - infiltration_outdoor_temp)
+        assumed_wind_coefficient = 0.000246  # single story, class 2 shelter (rural, no obstructions)
+        average_wind_speed = 6  # m/s
+        design_infiltration_flow_rate = (assumed_effective_leakage_area / 1000) * sqrt(
+            assumed_stack_coefficient * delta_t + assumed_wind_coefficient * average_wind_speed ** 2
+        )
         self.infiltration_zone = Infiltration(
-            'Main Zone Infiltration', self.zone_indoor, self.schedule_infiltration, 0.010
+            'Main Zone Infiltration', self.zone_indoor, self.schedule_infiltration, design_infiltration_flow_rate
         )
         self.infiltration_garage = Infiltration(
-            'Garage Infiltration', self.zone_garage, self.schedule_infiltration, 0.028
+            'Garage Infiltration', self.zone_garage, self.schedule_infiltration, design_infiltration_flow_rate
         )
-        for i in [self.infiltration_zone, self.infiltration_garage]:
+        self.infiltration_attic = Infiltration(
+            'Attic Infiltration', self.zone_attic, self.schedule_infiltration, design_infiltration_flow_rate
+        )
+        for i in [self.infiltration_zone, self.infiltration_garage, self.infiltration_attic]:
             self._add_idf_object(
                 'ZoneInfiltration:DesignFlowRate',
                 i.name, i.zone.name, i.schedule.name,
