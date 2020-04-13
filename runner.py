@@ -60,7 +60,7 @@ class Runner(distutils.cmd.Command):
         api = EnergyPlusAPI()
         print("Running in: " + str(idf_run_dir))
         return_val = api.runtime.run_energyplus(
-            ['-w', str(WeatherManager.path_to_tmy_okc_epw_file()), '-d', str(idf_run_dir), str(idf_path)]
+            ['-w', str(WeatherManager().path_to_merged_epw_file()), '-d', str(idf_run_dir), str(idf_path)]
         )
         if return_val != 0:
             print("EnergyPlus failed - aborting")
