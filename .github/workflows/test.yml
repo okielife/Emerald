@@ -30,4 +30,4 @@ jobs:
       run: python3 setup.py run
 
     - name: Lint the code
-      run: python3 setup.py flake8
+      run: flake8 pyemerald
