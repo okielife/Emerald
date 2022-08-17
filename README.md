@@ -1,6 +1,6 @@
 # Emerald
 
-[![Build Status](https://travis-ci.org/okielife/Emerald.svg?branch=master)](https://travis-ci.org/okielife/Emerald)
+[![Exercise](https://github.com/okielife/Emerald/actions/workflows/test.yml/badge.svg)](https://github.com/okielife/Emerald/actions/workflows/test.yml)
 [![Documentation Status](https://readthedocs.org/projects/emeraldmodeling/badge/?version=master)](https://emeraldmodeling.readthedocs.io/en/master/?badge=master)
 
 This repo will store a variety of things related to my house modeling effort.  Folders include:
