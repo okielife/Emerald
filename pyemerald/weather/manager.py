@@ -161,7 +161,7 @@ class WeatherManager:
                 epw_hour[29],
                 epw_hour[30],
                 epw_hour[31],
-                epw_hour[32],
+                0.0,
                 epw_hour[33]
             ]
             epw_string += ','.join([str(x) for x in new_tokens]) + '\n'

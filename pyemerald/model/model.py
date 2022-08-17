@@ -1152,7 +1152,7 @@ class Model:
         self.schedule_activity_dax = ScheduleConstant('ScheduleDaxActivity', self.schedule_type_any, 115)
         self.schedule_equipment_office_computers = ScheduleConstant('OfficeCompSchedule', self.schedule_type_frac, 1.0)
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
-        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
+        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 22.22)
         self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
         self.schedule_equip_fridge = ScheduleConstant('FridgeSchedule', self.schedule_type_any, 1.0)
         self.schedule_equip_other_kitchen = ScheduleConstant('OtherKitchenSchedule', self.schedule_type_any, 1.0)
