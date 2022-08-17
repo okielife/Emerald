@@ -13,6 +13,7 @@ Here are some things we've done so far:
 Still to do:
 
  - Move to EnergyPlus 22.1; update for API changes
+ - Update these docs with information about the house geometry/properties
  - Add outputs as individual classes, separate out all boilerplate stuff
  - Diagnose energy usage difference
 
