@@ -1,8 +1,3 @@
-.. Emerald Modeling documentation master file, created by
-   sphinx-quickstart on Mon Apr  6 13:53:07 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Emerald Modeling's documentation!
 ============================================
 
@@ -13,12 +8,13 @@ Here are some things we've done so far:
  - Gotten electricity usage data from bills
  - Estimated thermal properties of the envelope
  - Generated basic EnergyPlus inputs
+ - It runs EnergyPlus 9.3 on GitHub Actions now
 
 Still to do:
 
- - On Travis, it should download E+ 9.3 and run E+ through it.
+ - Move to EnergyPlus 22.1; update for API changes
  - Add outputs as individual classes, separate out all boilerplate stuff
- - Lots of things.
+ - Diagnose energy usage difference
 
 .. toctree::
    :maxdepth: 2
