@@ -29,7 +29,7 @@ from pyemerald.model.stuctures import (
 class Model:
 
     def __init__(self):
-        self.idf_string = ''
+        self.idf_string: str = ''
         # order does matter here, materials need to be declared before constructions, etc.
         self._setup_settings()
         self._setup_location()
@@ -48,7 +48,7 @@ class Model:
 
     @staticmethod
     def _build_wall_vertices(vertex_a: Vertex2D, vertex_b: Vertex2D, ceiling_height: float) -> List[Vertex3D]:
-        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        """The vertices should be given in clockwise order as you look in from the exterior of the space"""
         return [
             Vertex3D.from_vertex_and_height(vertex_a, 0),
             Vertex3D.from_vertex_and_height(vertex_a, ceiling_height),
@@ -58,7 +58,7 @@ class Model:
 
     @staticmethod
     def _build_window_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom_height: float, top_height: float) -> List[Vertex3D]:
-        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        """The vertices should be given in clockwise order as you look in from the exterior of the space"""
         return [
             Vertex3D.from_vertex_and_height(v_a, bottom_height),
             Vertex3D.from_vertex_and_height(v_a, top_height),
@@ -893,7 +893,7 @@ class Model:
                 'BuildingSurface:Detailed',
                 s.name,
                 SurfaceType.to_building_surface_key_choice(s.surface_type),
-                s.construction.name, s.zone.name,
+                s.construction.name, s.zone.name, '',
                 BoundaryConditionType.to_building_surface_key_choice(s.outdoor_bc_type), bc_instance_name,
                 sun_exposed_string, wind_exposed_string, s.view_factor_to_ground, len(s.vertices), *vertex_list
             )

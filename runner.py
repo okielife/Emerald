@@ -26,18 +26,18 @@ class Runner(distutils.cmd.Command):
         pass
 
     def run(self):
-        if os.path.exists("/eplus/installs/EnergyPlus-9-3-0/"):
+        if os.path.exists("/eplus/installs/EnergyPlus-22-1-0/"):
             # if I am running locally, just use my local install
-            ep_install_path = "/eplus/installs/EnergyPlus-9-3-0/"
+            ep_install_path = "/eplus/installs/EnergyPlus-22-1-0/"
         else:
-            file_name = 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64.tar.gz'
-            url = 'https://github.com/NREL/EnergyPlus/releases/download/v9.3.0/%s' % file_name
+            file_name = 'EnergyPlus-22.1.0-ed759b17ee-Linux-Ubuntu20.04-x86_64.tar.gz'
+            url = 'https://github.com/NREL/EnergyPlus/releases/download/v22.1.0/%s' % file_name
             extract_dir = Path(tempfile.mkdtemp())
             ep_tar_path = extract_dir / file_name
             _, headers = urllib.request.urlretrieve(url, ep_tar_path)
             extract_command = ['tar', '-xzf', file_name, '-C', extract_dir]
             check_call(extract_command, cwd=extract_dir)
-            ep_install_path = extract_dir / 'EnergyPlus-9.3.0-baff08990c-Linux-x86_64'
+            ep_install_path = extract_dir / 'EnergyPlus-22.1.0-ed759b17ee-Linux-Ubuntu20.04-x86_64'
 
         sys.path.insert(0, str(ep_install_path))
         # noinspection PyUnresolvedReferences
@@ -58,9 +58,10 @@ class Runner(distutils.cmd.Command):
 
         # run the IDF using the EnergyPlus API (cool!)
         api = EnergyPlusAPI()
+        state = api.state_manager.new_state()
         print("Running in: " + str(idf_run_dir))
         return_val = api.runtime.run_energyplus(
-            ['-w', str(WeatherManager().path_to_merged_epw_file()), '-d', str(idf_run_dir), str(idf_path)]
+            state, ['-w', str(WeatherManager().path_to_merged_epw_file()), '-d', str(idf_run_dir), str(idf_path)]
         )
         if return_val != 0:
             print("EnergyPlus failed - aborting")
