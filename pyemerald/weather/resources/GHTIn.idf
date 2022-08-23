@@ -6,45 +6,45 @@ Materials,
   7.95, 7.95;         !- Indoor HConv Downward/Upward
 
 MatlProps,
-  1490, 1490,         !- Density
-  1800, 1800,         !- Specific Heat
-  0.85, 0.85;         !- Conductivity
+  2300, 1200,         !- Slab/Soil Density
+  650, 1200,          !- Slab/Soil Specific Heat
+  0.9, 1.0;           !- Slab/Soil Conductivity
 
 BoundConds,
   FALSE,              !- Evapotranspiration?
   TRUE,               !- Lower boundary at fixed temperature?
   10,                 !- Lower boundary fixed temperature
-  TRUE,               !- Ground surface convection coefficient user specified?
-  100;                !- Ground surface convection coefficient
+  FALSE,              !- Ground surface convection coefficient user specified?
+  ;                   !- Ground surface convection coefficient
 
 BldgProps,
   25,                 !- Number of years to iterate
   0,                  !- Slab shape: only 0 is allowed which means rectangle
-  2.7,                !- Building height
+  4,                  !- Building height
   21,                 !- Average monthly temp set points
   21,
   21,
-  24,
-  24,
-  24,
-  24,
-  24,
-  24,
-  24,
+  22,
+  22,
+  22,
+  22,
+  22,
+  22,
+  22,
+  22,
   21,
-  21,
-  0,                  !- Indoor temp sine wave amplitude
+  1,                  !- Indoor temp sine wave amplitude
   0.1;                !- Convergence tolerance (temp change)
 
 Insulation,
-  0.0,                !- Under slab R-Value
-  0.0,                !- Width of strip under slab
-  0.0,                !- Vertical insulation R-Value
-  0.0,                !- Depth of vertical insulation
-  0;                  !- Is there vertical insulation? 1-yes, 0-no
+  1.0,                !- Under slab R-Value
+  1.0,                !- Width of strip under slab
+  1.5,                !- Vertical insulation R-Value
+  0.4,                !- Depth of vertical insulation
+  1;                  !- Is there vertical insulation? 1-yes, 0-no
 
 EquivalentSlab,
   3.875,              !- Slab area to perimeter ratio 
-  0.1285059,          !- Slab thickness
-  8,                  !- Horizontal clearance distance from edge of slab to domain edge
+  0.2,                !- Slab thickness
+  12,                 !- Horizontal clearance distance from edge of slab to domain edge
   15;                 !- Vertical clearance distance from bottom of slab to domain bottom

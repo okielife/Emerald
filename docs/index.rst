@@ -8,14 +8,20 @@ Here are some things we've done so far:
  - Gotten electricity usage data from bills
  - Estimated thermal properties of the envelope
  - Generated basic EnergyPlus inputs
- - It runs EnergyPlus 9.3 on GitHub Actions now
+ - It runs EnergyPlus 22.1 on GitHub Actions now
 
 Still to do:
 
- - Move to EnergyPlus 22.1; update for API changes
+ - Fix roof geometry
+ - Add water use and tie to hot water heater
+ - Add garage refrigerator
+ - How about dishwasher -- check Fundamentals for modeling appliances, runtime, etc.
+ - Talk with Honeywell about historical data / old emails, num heating/cooling hours per month
+ - Determine if energy usage timing is reasonable
+ - Revisit fireplace infiltration
  - Update these docs with information about the house geometry/properties
- - Add outputs as individual classes, separate out all boilerplate stuff
- - Diagnose energy usage difference
+ - Add outputs to individual structure classes
+ - Add years 2020 and 2021
 
 .. toctree::
    :maxdepth: 2

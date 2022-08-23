@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Union
 
@@ -138,6 +138,51 @@ class Window:
     construction: Construction
     base_surface: Surface
     vertices: List[Vertex3D]
+    blind_control: bool
+
+
+@dataclass()
+class WindowShadingBlind:
+    name: str
+    slat_orientation: str = 'Horizontal'
+    slat_width: float = 0.03  # meters
+    slat_separation: float = 0.03  # meters
+    slat_thickness: float = 0.00025
+    slat_angle_when_control_is_idle: float = 45
+    slat_conductivity: float = 0.048  # estimated as insulating fiber board from engineersedge.com
+    slat_beam_solar_transmittance: float = 0.1  # it blocks most of it
+    slat_front_side_solar_reflectance: float = 0.7
+    slat_back_side_solar_reflectance: float = 0.7
+    slat_diffuse_solar_transmittance: float = 0.1
+    slat_front_side_diffuse_solar_reflectance: float = 0.7
+    slat_back_side_diffuse_solar_reflectance: float = 0.7
+    slat_beam_visible_transmittance: float = 0.1
+    front_side_beam_visible_reflectance: float = 0.5
+    back_side_beam_visible_reflectance: float = 0.5
+    diffuse_visible_transmittance: float = 0.1
+    front_side_diffuse_visible_reflectance: float = 0.5
+    back_side_diffuse_visible_reflectance: float = 0.5
+
+
+@dataclass()
+class WindowShadingControl:
+    name: str
+    zone: Zone
+    control_sequence: int
+    shading_type: str
+    # construction_with_blind: Construction
+    control_type: str = 'OnIfHighSolarOnWindow'
+    # schedule name: blank
+    set_point: float = 10
+    # is scheduled: blank
+    # glare control: blank
+    shading_device: WindowShadingBlind = None
+    slat_control_type: str = 'BlockBeamSolar'
+    # slat angle schedule: blank
+    # setpoint 2: blank
+    # daylighting control object: blank
+    # multiple surface control type: blank
+    windows: List[Window] = field(default_factory=list)
 
 
 @dataclass()
@@ -194,3 +239,68 @@ class Equipment:
     design_level: float
     fraction_radiant: float = 0.3
     fraction_latent: float = 0.0
+
+
+@dataclass()
+class ExteriorEquipment:
+    name: str
+    fuel: str = 'Electricity'
+    schedule: Union[ScheduleCompact, ScheduleConstant] = ''
+    design_level: float = 0.0
+
+
+@dataclass()
+class WaterHeaterMixed:
+    name: str
+    tank_volume: float  # m3
+    setpoint_temp_schedule: Union[ScheduleCompact, ScheduleConstant]
+    dead_band_temperature_difference: float  # Delta-Celsius
+    max_temperature_limit: float  # Celsius
+    # control_type: str   # "Cycle" or "Modulate"
+    max_capacity: float
+    # min_capacity: float = 0.0
+    # ignition_minimum_flow_rate: float = 0.0
+    # ignition_delay: float = 0.0
+    # fuel_type: str = "Electricity"
+    thermal_efficiency: float
+    # plf_curve: str = ""
+    off_cycle_parasitic_fuel_rate: float
+    # off_cycle_parasitic_fuel_type: str = "Electricity"
+    # off_cycle_parasitic_fuel_heat_fraction_to_tank: float = 0.0
+    on_cycle_parasitic_fuel_rate: float
+    # on_cycle_parasitic_fuel_type: str = "Electricity"
+    # on_cycle_parasitic_fuel_heat_fraction_to_tank: float = 0.0
+    # ambient_temperature_indicator: str = "Zone"
+    # ambient_temp_schedule: str = ""
+    ambient_temp_zone: Zone
+    # ambient_temp_oa_node: str = ""
+    off_cycle_loss_coefficient_to_ambient: float
+    # off_cycle_loss_fraction_to_zone: float = 1.0
+    on_cycle_loss_coefficient_to_ambient: float
+    # on_cycle_loss_fraction_to_zone: float = 1.0
+    peak_use_flow_rate: float
+    use_flow_rate_fraction_schedule: Union[ScheduleCompact, ScheduleConstant]
+    # use_side_inlet_node: str
+    # use_side_outlet_node: str  # once we connect the water use with the water heater, add these in
+    # use_side_effectiveness: float
+
+    def to_idf_object(self) -> List[str]:
+        return [
+            self.name, self.tank_volume, self.setpoint_temp_schedule.name,
+            self.dead_band_temperature_difference,
+            self.max_temperature_limit,
+            "Cycle",
+            self.max_capacity, "", "", "",
+            "Electricity",
+            self.thermal_efficiency,
+            "",
+            self.off_cycle_parasitic_fuel_rate, "Electricity", 0.0,
+            self.on_cycle_parasitic_fuel_rate, "Electricity", 0.0,
+            "Zone", "", self.ambient_temp_zone.name, "",
+            self.off_cycle_loss_coefficient_to_ambient, 1.0,
+            self.on_cycle_loss_coefficient_to_ambient, 1.0,
+            self.peak_use_flow_rate, self.use_flow_rate_fraction_schedule.name,
+            # self.use_side_inlet_node, self.use_side_outlet_node,
+            # self.use_side_effectiveness
+        ]
+
