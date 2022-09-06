@@ -23,5 +23,6 @@ class ResultsAnalyzer:
         gp.plot(
             (x, np.array(self.actual), {'with': 'lines', 'legend': 'Actual'}),
             (x, np.array(self.e_plus), {'with': 'lines', 'legend': 'EnergyPlus'}),
+            xmin=1, ymin=0.0, ymax=4000,
             terminal='dumb 120,25', unset='grid', title='Comparing E+ to Actual (RMSE = %s)' % r_m_s_e
         )

@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import List
 
 from pyemerald.model.stuctures import (
@@ -5,6 +6,7 @@ from pyemerald.model.stuctures import (
     Construction,
     Door,
     Equipment,
+    ExteriorEquipment,
     Infiltration,
     Lights,
     Material,
@@ -20,7 +22,10 @@ from pyemerald.model.stuctures import (
     SurfaceType,
     Vertex2D,
     Vertex3D,
+    WaterHeaterMixed,
     Window,
+    WindowShadingBlind,
+    WindowShadingControl,
     Zone,
 )
 
@@ -28,16 +33,17 @@ from pyemerald.model.stuctures import (
 class Model:
 
     def __init__(self):
-        self.idf_string = ''
+        self.idf_string: str = ''
         # order does matter here, materials need to be declared before constructions, etc.
         self._setup_settings()
         self._setup_location()
         self._setup_scheduling()
         self._setup_zones()
         self._setup_internal_gains()
+        self._setup_exterior_energy_use()
         self._setup_materials()
         self._setup_constructions()
-        self._setup_floor_vertices()
+        self._setup_vertices()
         self._setup_surfaces()
         self._setup_windows_and_doors()
         self._water_use()
@@ -46,29 +52,41 @@ class Model:
 
     @staticmethod
     def _build_wall_vertices(vertex_a: Vertex2D, vertex_b: Vertex2D, ceiling_height: float) -> List[Vertex3D]:
-        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        """The vertices should be given in clockwise order as you look in from the exterior of the space"""
         return [
-            Vertex3D(vertex_a, 0),
-            Vertex3D(vertex_a, ceiling_height),
-            Vertex3D(vertex_b, ceiling_height),
-            Vertex3D(vertex_b, 0)
+            Vertex3D.from_vertex_and_height(vertex_a, 0),
+            Vertex3D.from_vertex_and_height(vertex_a, ceiling_height),
+            Vertex3D.from_vertex_and_height(vertex_b, ceiling_height),
+            Vertex3D.from_vertex_and_height(vertex_b, 0)
         ]
 
     @staticmethod
     def _build_window_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom_height: float, top_height: float) -> List[Vertex3D]:
-        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        """The vertices should be given in clockwise order as you look in from the exterior of the space"""
         return [
-            Vertex3D(v_a, bottom_height),
-            Vertex3D(v_a, top_height),
-            Vertex3D(v_b, top_height),
-            Vertex3D(v_b, bottom_height)
+            Vertex3D.from_vertex_and_height(v_a, bottom_height),
+            Vertex3D.from_vertex_and_height(v_a, top_height),
+            Vertex3D.from_vertex_and_height(v_b, top_height),
+            Vertex3D.from_vertex_and_height(v_b, bottom_height)
+        ]
+
+    @staticmethod
+    def _build_fake_attic_wall_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom: float) -> List[Vertex3D]:
+        """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        v_fake_attic_point = Vertex2D('95', 10.8694694, 7.552061782)
+        return [
+            Vertex3D.from_vertex_and_height(v_a, bottom),
+            # Vertex3D.from_vertex_and_height(v_a, top),
+            # Vertex3D.from_vertex_and_height(v_b, top),
+            Vertex3D.from_vertex_and_height(v_fake_attic_point, 6.2),
+            Vertex3D.from_vertex_and_height(v_b, bottom)
         ]
 
     @staticmethod
     def _add_height_to_vertices(height: float, vertices: List[Vertex2D]) -> List[Vertex3D]:
         return_vertices = list()
         for vertex in vertices:
-            return_vertices.append(Vertex3D(vertex, height))
+            return_vertices.append(Vertex3D.from_vertex_and_height(vertex, height))
         return return_vertices
 
     def _add_idf_object(self, object_name: str, *object_data):
@@ -84,39 +102,31 @@ class Model:
         self.idf_string += '\n'
 
     def _setup_settings(self):
-        self._add_idf_object('Version', 9.3)
+        self._add_idf_object('Version', 22.1)
         self._add_idf_object('TimeStep', 4)
         self._add_idf_object('Building', 'EmeraldWay', 0, 'Country', 0.5, 0.05, 'MinimalShadowing', 6, 2)
-        self._add_idf_object('SimulationControl', 'No', 'No', 'No', 'Yes', 'Yes')
+        self._add_idf_object('SimulationControl', 'No', 'No', 'No', 'No', 'Yes')
         self._add_idf_object('GlobalGeometryRules', 'UpperLeftCorner', 'CounterClockwise', 'World')
-        self._add_idf_object('RunPeriod', 'Year 2020', 1, 1, 2020, 12, 31, 2020, '', 'Yes', 'Yes', 'No', 'Yes', 'Yes')
+        self._add_idf_object('RunPeriod', 'Year 2019', 1, 1, 2019, 12, 31, 2019, '', 'Yes', 'Yes', 'No', 'Yes', 'Yes')
         self._add_idf_object('RunPeriodControl:DaylightSavingTime', '2nd Sunday in March', '2nd Sunday in November')
 
     def _setup_location(self):
         self._add_idf_object('Site:Location', 'Cashion', 35.798, -97.679, -6, 396)
-        # building surface temps were generated
+        # building surface temps were generated by Slab
         self._add_idf_object(
             'Site:GroundTemperature:BuildingSurface',
-            22.797, 22.755, 23.005, 25.524, 26.319, 26.965, 27.372, 27.515, 27.325, 26.906, 24.156, 23.281
-        )
-        self._add_idf_object(
-            'SizingPeriod:DesignDay',
-            'Winter Sizing Period', 1, 21, 'WinterDesignDay', -11.4, 0.0, 'DefaultMultipliers', '', 'WetBulb', -11.4,
-            '', '', '', '', 96634, 6.1, 0, 'No', 'No', 'No', 'ASHRAEClearSky', '', '', '', '', 0.0
-        )
-        self._add_idf_object(
-            'SizingPeriod:DesignDay',
-            'Summer Sizing Period', 7, 21, 'SummerDesignDay', 37.5, 11.7, 'DefaultMultipliers', '', 'WetBulb', 23.4,
-            '', '', '', '', 96634, 5.5, 170, 'No', 'No', 'No', 'ASHRAETau', '', '', 0.426, 2.214
+            21.60, 21.50, 21.62, 22.62, 23.03, 23.47, 23.83, 24.02, 23.97, 23.74, 23.28, 22.13
         )
 
     def _setup_zones(self):
         # set up zones
         self.zone_indoor = Zone("Indoor")
         self.zone_garage = Zone("Garage")
+        self.zone_attic = Zone("Attic")
         # write IDF
         self._add_idf_object('Zone', self.zone_indoor.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
         self._add_idf_object('Zone', self.zone_garage.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
+        self._add_idf_object('Zone', self.zone_attic.name, 0, 0, 0, 0, 1, 1, 'AutoCalculate', 'AutoCalculate')
 
     def _setup_materials(self):
         # setup materials
@@ -125,18 +135,27 @@ class Model:
         self.material_wall_insulation = Material('R13Insulation', 0.09, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
         self.material_gypsum = Material('Gypsum', 0.013, 0.16, 800, 837, 'https://researchgate.net')
         self.material_shingles = Material('Shingles', 0.01, 0.74, 2110, 920, 'Handbook 2017 - Asphalt')
-        self.material_roof_insulation = Material('R31Insulation', 0.21, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
+        self.material_ceiling_insulation = Material('R31Insulation', 0.21, 0.04, 45, 2020, 'www.greenspec.co.uk')
         self.material_concrete = Material('6InchConcrete', 0.15, 1.73, 2242, 837, 'In IDF data-sets')
         self.material_wood_floor = Material('WoodFlooring', 0.03, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
         self.material_garage_door = Material('GarageDoorMetal', 0.005, 167, 2700, 896, 'Assuming Aluminum')
         self.material_door = Material('DoorMaterialWood', 0.05, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
+        self.material_soffit = Material(
+            'Soffit-Hardboard',
+            0.05, 0.15, 600, 2300,
+            'Conductivity from PerformancePanels.com, matched up with average hardwood in Handbook 2017'
+        )
         self.material_glass_3mm = MaterialWindowGlazing('Clear 3mm Glazing', 0.003)
         self.material_window_gas = MaterialWindowGas('Air Gap 13mm', 'Air', 0.013)
+        # create a single blinds instance to reuse since we have the same blinds all over
+        self.window_shade_blinds = WindowShadingBlind(
+            'HorizontalSlatBlinds',
+        )
         # write IDF
         all_materials = [
             self.material_brick, self.material_sheathing, self.material_wall_insulation, self.material_gypsum,
-            self.material_shingles, self.material_roof_insulation, self.material_concrete, self.material_wood_floor,
-            self.material_garage_door, self.material_door
+            self.material_shingles, self.material_ceiling_insulation, self.material_concrete, self.material_wood_floor,
+            self.material_garage_door, self.material_door, self.material_soffit
         ]
         for m in all_materials:
             self._add_idf_object(
@@ -154,6 +173,28 @@ class Model:
                 'WindowMaterial:Gas',
                 gas.name, gas.gas_type, gas.thickness
             )
+        self._add_idf_object(
+            'WindowMaterial:Blind',
+            self.window_shade_blinds.name,
+            self.window_shade_blinds.slat_orientation,
+            self.window_shade_blinds.slat_width,
+            self.window_shade_blinds.slat_separation,
+            self.window_shade_blinds.slat_thickness,
+            self.window_shade_blinds.slat_angle_when_control_is_idle,
+            self.window_shade_blinds.slat_conductivity,
+            self.window_shade_blinds.slat_beam_solar_transmittance,
+            self.window_shade_blinds.slat_front_side_solar_reflectance,
+            self.window_shade_blinds.slat_back_side_solar_reflectance,
+            self.window_shade_blinds.slat_diffuse_solar_transmittance,
+            self.window_shade_blinds.slat_front_side_diffuse_solar_reflectance,
+            self.window_shade_blinds.slat_back_side_diffuse_solar_reflectance,
+            self.window_shade_blinds.slat_beam_visible_transmittance,
+            self.window_shade_blinds.front_side_beam_visible_reflectance,
+            self.window_shade_blinds.back_side_beam_visible_reflectance,
+            self.window_shade_blinds.diffuse_visible_transmittance,
+            self.window_shade_blinds.front_side_diffuse_visible_reflectance,
+            self.window_shade_blinds.back_side_diffuse_visible_reflectance,
+        )
 
     def _setup_constructions(self):
         # set up constructions
@@ -164,7 +205,7 @@ class Model:
             self.material_gypsum, self.material_wall_insulation, self.material_gypsum
         ])
         self.construction_roof = Construction('RoofConstruction', [
-            self.material_shingles, self.material_sheathing, self.material_roof_insulation
+            self.material_shingles, self.material_sheathing
         ])
         self.construction_floor = Construction('FloorConstruction', [
             self.material_concrete, self.material_wood_floor
@@ -172,11 +213,15 @@ class Model:
         self.construction_garage_floor = Construction('GarageFloorConstruction', [self.material_concrete])
         self.construction_door = Construction('DoorConstruction', [self.material_door])
         self.construction_garage_door = Construction('GarageDoorConstruction', [self.material_garage_door])
-        self.construction_operable_window = Construction('OperableWindow', [
+        self.construction_ceiling = Construction('CeilingConstruction', [
+            self.material_ceiling_insulation, self.material_gypsum
+        ])
+        self.construction_soffit = Construction('SoffitConstruction', [self.material_soffit])
+        self.construction_window = Construction('Window', [
             self.material_glass_3mm, self.material_window_gas, self.material_glass_3mm
         ])
-        self.construction_inoperable_window = Construction('InoperableWindow', [
-            self.material_glass_3mm, self.material_window_gas, self.material_glass_3mm
+        self.construction_window_with_blinds = Construction('WindowWithBlinds', [
+            self.material_glass_3mm, self.material_window_gas, self.material_glass_3mm, self.window_shade_blinds
         ])
         # write IDF
         all_constructions = [
@@ -187,49 +232,125 @@ class Model:
             self.construction_garage_floor,
             self.construction_door,
             self.construction_garage_door,
-            self.construction_operable_window,
-            self.construction_inoperable_window
+            self.construction_window,
+            # self.construction_window_with_blinds,
+            self.construction_ceiling,
+            self.construction_soffit
         ]
         for c in all_constructions:
             self._add_idf_object('Construction', c.name, *[layer.name for layer in c.layers])
 
-    def _setup_floor_vertices(self):
-        # set up vertices
-        self.v_1 = Vertex2D('1', 28.212034, 43.770042)
-        self.v_2 = Vertex2D('2', 29.521912, 45.796454)
-        self.v_3 = Vertex2D('3', 27.004772, 47.423578)
-        self.v_4 = Vertex2D('4', 29.127958, 50.70856)
-        self.v_5 = Vertex2D('5', 32.00781, 48.847248)
-        self.v_6 = Vertex2D('6', 33.05556, 50.46853)
-        self.v_7 = Vertex2D('7', 32.031686, 51.1302)
-        self.v_8 = Vertex2D('8', 34.21253, 54.499002)
-        self.v_9 = Vertex2D('9', 34.722816, 54.169056)
-        self.v_10 = Vertex2D('10', 36.543234, 56.984138)
-        self.v_11 = Vertex2D('11', 35.68954, 57.536588)
-        self.v_12 = Vertex2D('12', 36.682426, 59.071764)
-        self.v_13 = Vertex2D('13', 36.29787, 59.321192)
-        self.v_14 = Vertex2D('14', 38.090602, 62.093856)
-        self.v_15 = Vertex2D('15', 38.474396, 61.845444)
-        self.v_16 = Vertex2D('16', 39.467536, 63.381128)
-        self.v_17 = Vertex2D('17', 43.349418, 60.872878)
-        self.v_18 = Vertex2D('18', 45.555408, 64.285876)
-        self.v_19 = Vertex2D('19', 51.123088, 60.68695)
-        self.v_20 = Vertex2D('20', 43.416474, 48.76165)
-        self.v_21 = Vertex2D('21', 43.949112, 48.41748)
-        self.v_22 = Vertex2D('22', 41.59123, 44.769532)
-        self.v_23 = Vertex2D('23', 41.0591, 45.113956)
-        self.v_24 = Vertex2D('24', 40.478964, 44.21886)
-        self.v_25 = Vertex2D('25', 41.01211, 43.874182)
-        self.v_26 = Vertex2D('26', 40.061388, 42.40149)
-        self.v_27 = Vertex2D('27', 39.52748, 42.74693)
-        self.v_28 = Vertex2D('28', 36.65982, 38.309042)
-        self.v_29 = Vertex2D('29', 33.332674, 40.45966)
-        self.v_30 = Vertex2D('30', 32.945832, 39.863014)
-        self.v_31 = Vertex2D('31', 30.599634, 41.379902)
-        self.v_32 = Vertex2D('32', 30.986984, 41.975786)
-        self.v_34 = Vertex2D('34', 39.542212, 55.136542)
-        self.v_35 = Vertex2D('35', 41.501822, 58.192924)
-        self.v_36 = Vertex2D('36', 47.154846, 54.547008)
+    def _setup_vertices(self):
+        # All vertices are listed from the CAD model, which is the official reference
+        # The CAD model should be zeroed at the *exterior* southwestern corner of the guest bathroom
+        # This happens to be point 1 in the drawing
+        # This will result in a few negative vertex values in both the X and Y directions, but it's
+        #  easier than setting some arbitrary origin
+        # Keep in mind that the units should be in meters
+        # Also keep in mind the vertex numbers are based on the resources/PointLabels.png file
+        # Also keep in the mind the geometry is measured at the exterior of the walls
+        # The easiest way to get these from the CAD file is to make sure the origin is set, make sure
+        #  the file is in inches, bump up the distance precision, set only snap to intersection, and then create a
+        #  2-point line from the origin, and note down where your mouse is at for the second point
+        # MAIN FLOOR PLAN OUTLINE VERTICES
+        self.v_1 = Vertex2D('1', 0, 0)
+        self.v_2 = Vertex2D('2', 1.309841805, 2.026544715)
+        self.v_3 = Vertex2D('3', -1.2073400542, 3.6535061042)
+        self.v_4 = Vertex2D('4', 0.91598242, 6.9386417488)
+        self.v_5 = Vertex2D('5', 3.7958091216, 5.0772876102)
+        self.v_6 = Vertex2D('6', 4.8436825656, 6.6985233822)
+        self.v_7 = Vertex2D('7', 3.8197441766, 7.3603381876)
+        self.v_8 = Vertex2D('8', 5.9982178994, 10.7308020334)
+        self.v_9 = Vertex2D('9', 6.5101870812, 10.399894618)
+        self.v_10 = Vertex2D('10', 8.3301778024, 13.2157251814)
+        self.v_11 = Vertex2D('11', 7.4768958158, 13.767237515)
+        self.v_12 = Vertex2D('12', 8.4696180112, 15.3031450858)
+        self.v_13 = Vertex2D('13', 8.0856411058, 15.551325641)
+        self.v_14 = Vertex2D('14', 9.87805619, 18.3244920784)
+        self.v_15 = Vertex2D('15', 10.2620330954, 18.0763115232)
+        self.v_16 = Vertex2D('16', 11.2547552908, 19.612219094)
+        self.v_17 = Vertex2D('17', 15.1371883184, 17.1028379812)
+        self.v_18 = Vertex2D('18', 17.3432376528, 20.5159659276)
+        self.v_19 = Vertex2D('19', 22.910902616, 16.917347928)
+        self.v_20 = Vertex2D('20', 15.2035177514, 4.992732204)
+        self.v_21 = Vertex2D('21', 15.7368189708, 4.6480369828)
+        self.v_22 = Vertex2D('22', 13.3791037472, 1.0002565212)
+        self.v_23 = Vertex2D('23', 12.8458025024, 1.344951717)
+        self.v_24 = Vertex2D('24', 12.2667145572, 0.4490056298)
+        self.v_25 = Vertex2D('25', 12.800015802, 0.104310434)
+        self.v_26 = Vertex2D('26', 11.848657024, -1.3676009986)
+        self.v_27 = Vertex2D('27', 11.3153557792, -1.0229057774)
+        self.v_28 = Vertex2D('28', 8.4474916394, -5.4599721128)
+        self.v_29 = Vertex2D('29', 5.1196919196, -3.3090740016)
+        self.v_30 = Vertex2D('30', 4.733633281, -3.9063713846)
+        self.v_31 = Vertex2D('31', 2.3871078242, -2.3897124672)
+        self.v_32 = Vertex2D('32', 2.7731664374, -1.7924150842)
+        # VERTICES FOR INTERNAL/GARAGE BOUNDARY WALLS
+        self.v_34 = Vertex2D('34', 11.2727001368, 11.4045792736)
+        self.v_35 = Vertex2D('35', 13.287027528, 14.4274935478)
+        self.v_36 = Vertex2D('36', 18.940018889, 10.7737254934)
+        # EAVE VERTICES
+        self.v_37 = Vertex2D('37', -0.5267978796, -0.1131636294)
+        self.v_38 = Vertex2D('38', 0.7830439254, 1.9133810856)
+        self.v_39 = Vertex2D('39', -1.7341379338, 3.5403424748)
+        self.v_40 = Vertex2D('40', 4.1103934302, 12.4046384622)
+        self.v_41 = Vertex2D('41', 6.3970234772, 10.9266924976)
+        self.v_42 = Vertex2D('42', 7.8033799228, 13.102561552)
+        self.v_43 = Vertex2D('43', 6.9500979362, 13.6540738856)
+        self.v_44 = Vertex2D('44', 7.9428201316, 15.1899814564)
+        self.v_45 = Vertex2D('45', 7.5588432516, 15.4381620116)
+        self.v_46 = Vertex2D('46', 9.764892586, 18.851289958)
+        self.v_47 = Vertex2D('47', 10.148869466, 18.6031094028)
+        self.v_48 = Vertex2D('48', 11.1415916868, 20.1390169736)
+        self.v_49 = Vertex2D('49', 14.3413991302, 18.0708457226)
+        self.v_50 = Vertex2D('50', 14.8377602152, 18.838799508)
+        self.v_51 = Vertex2D('51', 15.5203857994, 18.3975896462)
+        self.v_52 = Vertex2D('52', 17.2300740488, 21.0427637818)
+        self.v_53 = Vertex2D('53', 23.4377004702, 17.0305115574)
+        self.v_54 = Vertex2D('54', 15.7303156056, 5.1058958334)
+        self.v_55 = Vertex2D('55', 18.8234628102, 3.1066636114)
+        self.v_56 = Vertex2D('56', 13.9563654578, -4.4235514272)
+        self.v_57 = Vertex2D('57', 10.8632182786, -2.4243192306)
+        self.v_58 = Vertex2D('58', 8.5606552688, -5.986769967)
+        self.v_59 = Vertex2D('59', 5.2328555236, -3.8358718812)
+        self.v_60 = Vertex2D('60', 4.846796885, -4.4331692642)
+        self.v_61 = Vertex2D('61', 1.8603099446, -2.5028760966)
+        self.v_62 = Vertex2D('62', 2.2463685832, -1.9055787136)
+        # WINDOW/WALL VERTICES
+        self.v_63 = Vertex2D('63', -0.4076465812, 4.8907659106)
+        self.v_64 = Vertex2D('64', 0.116288947, 5.701381917)
+        self.v_65 = Vertex2D('65', 4.0302024298, 5.4399333162)
+        self.v_66 = Vertex2D('66', 4.5265635148, 6.2078871016)
+        self.v_67 = Vertex2D('67', 4.45398398, 8.3416134158)
+        self.v_68 = Vertex2D('68', 5.363978096, 9.7495268052)
+        self.v_69 = Vertex2D('69', 7.1720018866, 11.423833007)
+        self.v_70 = Vertex2D('70', 7.668362997, 12.1917867924)
+        self.v_71 = Vertex2D('71', 8.7336681562, 16.5539320432)
+        self.v_72 = Vertex2D('72', 9.230029165, 17.3218856508)
+        self.v_73 = Vertex2D('73', 11.8947160124, 19.1985853518)
+        self.v_74 = Vertex2D('74', 13.8999278262, 17.9025319114)
+        self.v_75 = Vertex2D('75', 14.3692320692, 17.5992006918)
+        self.v_76 = Vertex2D('76', 15.051858517, 17.1579902712)
+        self.v_77 = Vertex2D('77', 18.1111906762, 20.0196053252)
+        self.v_78 = Vertex2D('78', 22.1429495926, 17.4137085304)
+        self.v_79 = Vertex2D('79', 18.3747192322, 9.8991122312)
+        self.v_80 = Vertex2D('80', 17.7404800384, 8.9178379428)
+        self.v_81 = Vertex2D('81', 16.6788187378, 7.275270057)
+        self.v_82 = Vertex2D('82', 15.7412422792, 5.8246821276)
+        self.v_83 = Vertex2D('83', 15.0750046734, 3.6240993812)
+        self.v_84 = Vertex2D('84', 14.04091807, 2.0241941228)
+        self.v_85 = Vertex2D('85', 12.81822684, 1.3022875402)
+        self.v_86 = Vertex2D('86', 12.335653002, 0.5556649542)
+        self.v_87 = Vertex2D('87', 11.2326284872, -1.150898765)
+        self.v_88 = Vertex2D('88', 10.7500546492, -1.897521351)
+        self.v_89 = Vertex2D('89', 9.729756766, -3.476093124)
+        self.v_90 = Vertex2D('90', 9.2471851378, -4.222712281)
+        self.v_91 = Vertex2D('91', 3.816354191, -3.313495024)
+        self.v_92 = Vertex2D('92', 3.3043868888, -2.9825888532)
+        self.v_93 = Vertex2D('93', 1.2799238308, -0.8272690592)
+        self.v_94 = Vertex2D('94', 0.2986487804, -0.1930293828)
+        # ONE SINGLE ROOFTOP VERTEX
+        self.v_95 = Vertex2D('95', 10.8694693964, 7.5520617818)
 
     def _setup_surfaces(self):
         # set up surfaces
@@ -239,18 +360,18 @@ class Model:
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_1, self.v_2, ceiling_height))
-        self.surface_dax_exterior_wall_south = Surface(
-            'Dax Exterior Wall South',
+        self.surface_nw_bedroom_exterior_wall_south = Surface(
+            'Northwest Bedroom Exterior Wall South',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_2, self.v_3, ceiling_height))
-        self.surface_dax_exterior_wall_west = Surface(
-            'Dax Exterior Wall West',
+        self.surface_nw_bedroom_exterior_wall_west = Surface(
+            'Northwest Bedroom Exterior Wall West',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_3, self.v_4, ceiling_height))
-        self.surface_dax_exterior_wall_north = Surface(
-            'Dax Exterior Wall North',
+        self.surface_nw_bedroom_exterior_wall_north = Surface(
+            'Northwest Bedroom Exterior Wall North',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_4, self.v_5, ceiling_height))
@@ -326,7 +447,7 @@ class Model:
             self.zone_garage, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_15, self.v_16, ceiling_height))
-        self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door = Surface(
+        self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door = Surface(
             'Garage Exterior Wall North B With Small Garage Door And Man Door',
             self.zone_garage, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
@@ -387,13 +508,13 @@ class Model:
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_26, self.v_27, ceiling_height))
-        self.surface_living_and_gibson_exterior_wall_east = Surface(
-            'Living And Gibs Exterior Wall East',
+        self.surface_living_and_se_bed_exterior_wall_east = Surface(
+            'Living And Southeast Bedroom Exterior Wall East',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_27, self.v_28, ceiling_height))
-        self.surface_gibson_exterior_wall_south = Surface(
-            'Gibs Exterior Wall South',
+        self.surface_se_bedroom_exterior_wall_south = Surface(
+            'Southeast Bedroom Exterior Wall South',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_28, self.v_29, ceiling_height))
@@ -418,7 +539,7 @@ class Model:
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_32, self.v_1, ceiling_height))
         # now the ceilings/roofs - need to fix this up later
-        ceiling_vertex_list_ccw_from_above = [
+        indoor_ceiling_vertex_list_ccw_from_above = [
             self.v_32,
             self.v_31,
             self.v_30,
@@ -446,64 +567,197 @@ class Model:
             self.v_2,
             self.v_1
         ]
-        ceiling_vertex_list_clockwise_from_above = ceiling_vertex_list_ccw_from_above[::-1]
+        indoor_ceiling_vertex_list_clockwise_from_above = indoor_ceiling_vertex_list_ccw_from_above[::-1]
         self.surface_ceiling_conditioned_space = Surface(
             'Conditioned Space Ceiling',
-            self.zone_indoor, SurfaceType.ROOF, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
-            self._add_height_to_vertices(ceiling_height, ceiling_vertex_list_ccw_from_above)
-        )
-        self.surface_ceiling_garage_space = Surface(
-            'Garage Ceiling',
-            self.zone_garage, SurfaceType.ROOF, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
-            self._add_height_to_vertices(ceiling_height, [
-                self.v_10,
-                self.v_34,
-                self.v_35,
-                self.v_36,
-                self.v_19,
-                self.v_18,
-                self.v_17,
-                self.v_16,
-                self.v_15,
-                self.v_14,
-                self.v_13,
-                self.v_12,
-                self.v_11
-            ])
+            self.zone_indoor, SurfaceType.CEILING, self.construction_ceiling,
+            BoundaryConditionType.OTHER_ZONE, self.zone_attic, 0.0, False, False,
+            self._add_height_to_vertices(ceiling_height, indoor_ceiling_vertex_list_ccw_from_above)
         )
         self.surface_floor_conditioned_space = Surface(
             'Conditioned Space Floor',
             self.zone_indoor, SurfaceType.FLOOR, self.construction_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
-            self._add_height_to_vertices(0.0, ceiling_vertex_list_clockwise_from_above)
+            self._add_height_to_vertices(0.0, indoor_ceiling_vertex_list_clockwise_from_above)
+        )
+        garage_ceiling_vertex_list_ccw_from_above = [
+            self.v_10,
+            self.v_34,
+            self.v_35,
+            self.v_36,
+            self.v_19,
+            self.v_18,
+            self.v_17,
+            self.v_16,
+            self.v_15,
+            self.v_14,
+            self.v_13,
+            self.v_12,
+            self.v_11
+        ]
+        garage_ceiling_vertex_list_clockwise_from_above = garage_ceiling_vertex_list_ccw_from_above[::-1]
+        self.surface_ceiling_garage_space = Surface(
+            'Garage Ceiling',
+            self.zone_garage, SurfaceType.CEILING, self.construction_ceiling,
+            BoundaryConditionType.OTHER_ZONE, self.zone_attic, 0.0, False, False,
+            self._add_height_to_vertices(ceiling_height, garage_ceiling_vertex_list_ccw_from_above)
         )
         self.surface_floor_garage_space = Surface(
             'Garage Floor',
             self.zone_garage, SurfaceType.FLOOR, self.construction_garage_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
-            self._add_height_to_vertices(0, [
-                self.v_11,
-                self.v_12,
-                self.v_13,
-                self.v_14,
-                self.v_15,
-                self.v_16,
-                self.v_17,
-                self.v_18,
-                self.v_19,
-                self.v_36,
-                self.v_35,
-                self.v_34,
-                self.v_10
+            self._add_height_to_vertices(0, garage_ceiling_vertex_list_clockwise_from_above)
+        )
+        self.surface_eave_1 = Surface(
+            'Roof Overhang 1 Above Entry',
+            self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
+            BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
+            self._add_height_to_vertices(ceiling_height, [
+                self.v_39,
+                self.v_40,
+                self.v_41,
+                self.v_9,
+                self.v_8,
+                self.v_7,
+                self.v_6,
+                self.v_5,
+                self.v_4,
+                self.v_3
             ])
         )
+        self.surface_eave_2 = Surface(
+            'Roof Overhang 2 Above Laundry and Garage',
+            self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
+            BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
+            self._add_height_to_vertices(ceiling_height, [
+                self.v_41,
+                self.v_42,
+                self.v_43,
+                self.v_44,
+                self.v_45,
+                self.v_46,
+                self.v_47,
+                self.v_48,
+                self.v_16,
+                self.v_15,
+                self.v_14,
+                self.v_13,
+                self.v_12,
+                self.v_11,
+                self.v_10,
+                self.v_9
+            ])
+        )
+        self.surface_eave_3 = Surface(
+            'Roof Overhang 3 Above Garage',
+            self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
+            BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
+            self._add_height_to_vertices(ceiling_height, [
+                self.v_48,
+                self.v_49,
+                self.v_50,
+                self.v_51,
+                self.v_52,
+                self.v_53,
+                self.v_19,
+                self.v_18,
+                self.v_17,
+                self.v_16
+            ])
+        )
+        self.surface_eave_4 = Surface(
+            'Roof Overhang 4 Above Patio',
+            self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
+            BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
+            self._add_height_to_vertices(ceiling_height, [
+                self.v_53,
+                self.v_54,
+                self.v_55,
+                self.v_56,
+                self.v_57,
+                self.v_58,
+                self.v_28,
+                self.v_27,
+                self.v_26,
+                self.v_25,
+                self.v_24,
+                self.v_23,
+                self.v_22,
+                self.v_21,
+                self.v_20,
+                self.v_19
+            ])
+        )
+        self.surface_eave_5 = Surface(
+            'Roof Overhang 5 Above Study',
+            self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
+            BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
+            self._add_height_to_vertices(ceiling_height, [
+                self.v_58,
+                self.v_59,
+                self.v_60,
+                self.v_61,
+                self.v_62,
+                self.v_37,
+                self.v_38,
+                self.v_39,
+                self.v_3,
+                self.v_2,
+                self.v_1,
+                self.v_32,
+                self.v_31,
+                self.v_30,
+                self.v_29,
+                self.v_28
+            ])
+        )
+        all_eave_vertices_cw_from_above = [
+            self.v_37,
+            self.v_38,
+            self.v_39,
+            self.v_40,
+            self.v_41,
+            self.v_42,
+            self.v_43,
+            self.v_44,
+            self.v_45,
+            self.v_46,
+            self.v_47,
+            self.v_48,
+            self.v_49,
+            self.v_50,
+            self.v_51,
+            self.v_52,
+            self.v_53,
+            self.v_54,
+            self.v_55,
+            self.v_56,
+            self.v_57,
+            self.v_58,
+            self.v_59,
+            self.v_60,
+            self.v_61,
+            self.v_62,
+        ]
+        self.attic_roof_surfaces = []
+        for i, v in enumerate(all_eave_vertices_cw_from_above):
+            this_vertex = all_eave_vertices_cw_from_above[i]
+            if i < len(all_eave_vertices_cw_from_above) - 1:
+                next_vertex = all_eave_vertices_cw_from_above[i+1]
+            else:  # on the last one just point back to the first vertex
+                next_vertex = all_eave_vertices_cw_from_above[0]
+            self.attic_roof_surfaces.append(
+                Surface(
+                    f"Attic Surface {i}", self.zone_attic, SurfaceType.WALL, self.construction_roof,
+                    BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
+                    self._build_fake_attic_wall_vertices(this_vertex, next_vertex, ceiling_height)
+                )
+            )
         all_surfaces = [
             self.surface_main_bath_exterior_wall_west,
-            self.surface_dax_exterior_wall_south,
-            self.surface_dax_exterior_wall_west,
-            self.surface_dax_exterior_wall_north,
+            self.surface_nw_bedroom_exterior_wall_south,
+            self.surface_nw_bedroom_exterior_wall_west,
+            self.surface_nw_bedroom_exterior_wall_north,
             self.surface_entry_exterior_wall,
             self.surface_office_exterior_wall_south,
             self.surface_office_exterior_wall_west,
@@ -518,7 +772,7 @@ class Model:
             self.surface_garage_exterior_wall_west_b_with_window,
             self.surface_garage_exterior_wall_north_a,
             self.surface_garage_exterior_wall_west_c,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self.surface_garage_exterior_wall_west_d,
             self.surface_garage_exterior_wall_north_c_with_large_garage_door,
             self.surface_garage_exterior_wall_east,
@@ -530,8 +784,8 @@ class Model:
             self.surface_living_exterior_wall_north,
             self.surface_living_exterior_wall_east_behind_chimney,
             self.surface_living_exterior_wall_south,
-            self.surface_living_and_gibson_exterior_wall_east,
-            self.surface_gibson_exterior_wall_south,
+            self.surface_living_and_se_bed_exterior_wall_east,
+            self.surface_se_bedroom_exterior_wall_south,
             self.surface_study_exterior_wall_east,
             self.surface_study_exterior_wall_south,
             self.surface_study_exterior_wall_west,
@@ -539,7 +793,9 @@ class Model:
             self.surface_ceiling_conditioned_space,
             self.surface_ceiling_garage_space,
             self.surface_floor_conditioned_space,
-            self.surface_floor_garage_space
+            self.surface_floor_garage_space,
+            self.surface_eave_1, self.surface_eave_2, self.surface_eave_3, self.surface_eave_4, self.surface_eave_5,
+            *self.attic_roof_surfaces
         ]
         for s in all_surfaces:
             bc_instance_name = ''
@@ -558,125 +814,125 @@ class Model:
                 'BuildingSurface:Detailed',
                 s.name,
                 SurfaceType.to_building_surface_key_choice(s.surface_type),
-                s.construction.name, s.zone.name,
+                s.construction.name, s.zone.name, '',
                 BoundaryConditionType.to_building_surface_key_choice(s.outdoor_bc_type), bc_instance_name,
                 sun_exposed_string, wind_exposed_string, s.view_factor_to_ground, len(s.vertices), *vertex_list
             )
 
     def _setup_windows_and_doors(self):
-        # dax window
-        v_1 = Vertex2D('alpha', 27.806904, 48.657764)
-        v_2 = Vertex2D('beta', 28.331414, 49.467262)
+        # nw bedroom window
+        v_1 = self.v_63
+        v_2 = self.v_64
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_dax = Window(
-            'Dax Window', self.construction_operable_window, self.surface_dax_exterior_wall_west,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Dax Window', self.construction_window, self.surface_nw_bedroom_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # office window
-        v_1 = Vertex2D('gamma', 32.667194, 52.106576)
-        v_2 = Vertex2D('delta', 33.578038, 53.515006)
+        v_1 = self.v_67
+        v_2 = self.v_68
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_office = Window(
-            'Office Window', self.construction_operable_window, self.surface_office_exterior_wall_west,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Office Window', self.construction_window, self.surface_office_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # laundry window
-        v_1 = Vertex2D('epsilon', 35.383978, 55.188866)
-        v_2 = Vertex2D('zeta', 35.88131, 55.958486)
+        v_1 = self.v_69
+        v_2 = self.v_70
         window_bottom = 1.2  # assumed
         window_top = 2.5  # assumed
         self.window_laundry = Window(
-            'Laundry Window', self.construction_inoperable_window, self.surface_utility_exterior_wall_west,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Laundry Window', self.construction_window, self.surface_utility_exterior_wall_west,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # garage window
-        v_1 = Vertex2D('eta', 36.946078, 60.320936)
-        v_2 = Vertex2D('theta', 37.442394, 61.089032)
+        v_1 = self.v_71
+        v_2 = self.v_72
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_garage = Window(
-            'Garage Window', self.construction_operable_window, self.surface_garage_exterior_wall_west_b_with_window,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Garage Window', self.construction_window, self.surface_garage_exterior_wall_west_b_with_window,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # master closet window
-        v_1 = Vertex2D('iota', 46.589442, 53.66639)
-        v_2 = Vertex2D('kappa', 45.953172, 52.68214)
+        v_1 = self.v_79
+        v_2 = self.v_80
         window_bottom = 2  # assumed
         window_top = 2.5  # assumed
         self.window_master_closet = Window(
-            'Master Closet Window', self.construction_inoperable_window, self.surface_master_exterior_wall_east,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Master Closet Window', self.construction_window, self.surface_master_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # master bedroom window
-        v_1 = Vertex2D('lambda', 44.894246, 51.042062)
-        v_2 = Vertex2D('mu', 43.952922, 49.58969)
+        v_1 = self.v_81
+        v_2 = self.v_82
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_master_bedroom = Window(
-            'Master Bedroom Window', self.construction_operable_window, self.surface_master_exterior_wall_east,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Master Bedroom Window', self.construction_window, self.surface_master_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # dining room window including door
-        v_1 = Vertex2D('nu', 43.289728, 47.388272)
-        v_2 = Vertex2D('xi', 42.2529, 45.791882)
+        v_1 = self.v_83
+        v_2 = self.v_84
         window_bottom = 0.05  # assumed
         window_top = 2.0  # assumed
         self.window_dining_and_door = Window(
-            'Dining Window Including Door', self.construction_inoperable_window, self.surface_dining_exterior_wall_east,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Dining Window Including Door', self.construction_window, self.surface_dining_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # living room window northern
-        v_1 = Vertex2D('omicron', 41.030652, 45.069506)
-        v_2 = Vertex2D('pi', 40.547798, 44.322746)
+        v_1 = self.v_85
+        v_2 = self.v_86
         window_bottom = 0.67  # assumed
         window_top = 2.8  # assumed
         self.window_living_room_northern = Window(
-            'Living Room Northern Window', self.construction_inoperable_window,
+            'Living Room Northern Window', self.construction_window,
             self.surface_living_exterior_wall_east_with_northern_window,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # living room window southern
-        v_1 = Vertex2D('rho', 39.445438, 42.618152)
-        v_2 = Vertex2D('sigma', 38.962584, 41.869614)
+        v_1 = self.v_87
+        v_2 = self.v_88
         window_bottom = 0.67  # assumed
         window_top = 2.8  # assumed
         self.window_living_room_southern = Window(
-            'Living Room Southern Window', self.construction_inoperable_window,
-            self.surface_living_and_gibson_exterior_wall_east,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Living Room Southern Window', self.construction_window,
+            self.surface_living_and_se_bed_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
-        # gibs window
-        v_1 = Vertex2D('tau', 37.942266, 40.290242)
-        v_2 = Vertex2D('upsilon', 37.460428, 39.544498)
+        # SE Bedroom window
+        v_1 = self.v_89
+        v_2 = self.v_90
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_gibs = Window(
-            'Gibs Window', self.construction_operable_window, self.surface_living_and_gibson_exterior_wall_east,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Gibs Window', self.construction_window, self.surface_living_and_se_bed_exterior_wall_east,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # study window
-        v_1 = Vertex2D('phi', 32.029908, 40.455596)
-        v_2 = Vertex2D('chi', 31.517336, 40.786558)
+        v_1 = self.v_91
+        v_2 = self.v_92
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_study = Window(
-            'Study Window', self.construction_inoperable_window, self.surface_study_exterior_wall_south,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Study Window', self.construction_window, self.surface_study_exterior_wall_south,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # main bath window
-        v_1 = Vertex2D('psi', 29.49448, 42.941494)
-        v_2 = Vertex2D('omega', 28.512262, 43.574462)
+        v_1 = self.v_93
+        v_2 = self.v_94
         window_bottom = 2  # assumed
         window_top = 2.5  # assumed
         self.window_main_bath = Window(
-            'Main Bath Window', self.construction_inoperable_window, self.surface_main_bath_exterior_wall_south,
-            self._build_window_vertices(v_1, v_2, window_bottom, window_top)
+            'Main Bath Window', self.construction_window, self.surface_main_bath_exterior_wall_south,
+            self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # entry door
-        v_1 = Vertex2D('!', 32.243522, 49.206912)
-        v_2 = Vertex2D('@', 32.74187, 49.9745)
+        v_1 = self.v_65
+        v_2 = self.v_66
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_entry = Door(
@@ -684,28 +940,28 @@ class Model:
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
         # garage door small
-        v_1 = Vertex2D('#', 40.109648, 62.96279)
-        v_2 = Vertex2D('$', 42.114038, 61.671454)
+        v_1 = self.v_73
+        v_2 = self.v_74
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_garage_small = Door(
             'Small Garage Door', self.construction_garage_door,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
-        # garage man door
-        v_1 = Vertex2D('%', 42.582084, 61.3664)
-        v_2 = Vertex2D('^', 43.26636, 60.924694)
+        # garage person door
+        v_1 = self.v_75
+        v_2 = self.v_76
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
-        self.door_garage_man = Door(
-            'Garage Man Door', self.construction_door,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+        self.door_garage_person = Door(
+            'Garage Person Door', self.construction_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
         # garage door large
-        v_1 = Vertex2D('&', 46.325028, 63.785496)
-        v_2 = Vertex2D('*', 50.356516, 61.181996)
+        v_1 = self.v_77
+        v_2 = self.v_78
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_garage_large = Door(
@@ -737,10 +993,36 @@ class Model:
                 w.name, 'Window', w.construction.name, w.base_surface.name, '', 'AutoCalculate', '', '',
                 len(w.vertices), *vertex_list
             )
+
+        # create a controller for each zone, then add the appropriate windows
+        main_zone_window_shade_control = WindowShadingControl(
+            'MainZoneWindowBlindController', self.zone_indoor, 1, 'InteriorBlind'
+        )
+        main_zone_window_shade_control.shading_device = self.window_shade_blinds
+        main_zone_window_shade_control.windows = [
+            w for w in all_windows if w.base_surface.zone == self.zone_indoor and w.blind_control
+        ]
+        garage_zone_window_shade_control = WindowShadingControl(
+            'GarageZoneWindowBlindController', self.zone_garage, 1, 'InteriorBlind'
+        )
+        garage_zone_window_shade_control.shading_device = self.window_shade_blinds
+        garage_zone_window_shade_control.windows = [
+            w for w in all_windows if w.base_surface.zone == self.zone_garage and w.blind_control
+        ]
+        all_blind_controllers = [
+            main_zone_window_shade_control, garage_zone_window_shade_control
+        ]
+        for c in all_blind_controllers:
+            self._add_idf_object(
+                'WindowShadingControl', c.name, c.zone.name, c.control_sequence, c.shading_type,
+                '', c.control_type, '', c.set_point, '', '', c.shading_device.name,
+                c.slat_control_type, '', '', '', '', *[w.name for w in c.windows]
+            )
+
         all_doors = [
             self.door_entry,
             self.door_garage_small,
-            self.door_garage_man,
+            self.door_garage_person,
             self.door_garage_large
         ]
         for d in all_doors:
@@ -764,23 +1046,40 @@ class Model:
             # OutputVariable('Site Day Type Index', '*'),
             OutputVariable('Zone Mean Air Temperature', '*'),
             OutputVariable('Zone Mean Radiant Temperature', '*'),
-            OutputVariable('Zone Predicted Sensible Load to Setpoint Heat Transfer Rate', '*'),
-            OutputVariable('Zone Predicted Sensible Load to Heating Setpoint Heat Transfer Rate', '*'),
-            OutputVariable('Zone Predicted Sensible Load to Cooling Setpoint Heat Transfer Rate', '*'),
+            OutputVariable('Zone Predicted Sensible Load to Setpoint Heat Transfer Rate', self.zone_indoor.name),
+            OutputVariable(
+                'Zone Predicted Sensible Load to Heating Setpoint Heat Transfer Rate', self.zone_indoor.name
+            ),
+            OutputVariable(
+                'Zone Predicted Sensible Load to Cooling Setpoint Heat Transfer Rate', self.zone_indoor.name
+            ),
             # OutputVariable('Surface Inside Face Temperature', '*'),
             # OutputVariable('Surface Outside Face Temperature', '*'),
             # OutputVariable('Surface Outside Face Sunlit Fraction', '*'),
-            OutputVariable('Zone Thermostat Heating Setpoint Temperature', '*'),
-            OutputVariable('Zone Thermostat Cooling Setpoint Temperature', '*'),
+            OutputVariable('Zone Thermostat Heating Setpoint Temperature', self.zone_indoor.name),
+            OutputVariable('Zone Thermostat Cooling Setpoint Temperature', self.zone_indoor.name),
             OutputVariable('Zone Air Terminal Sensible Heating Rate', '*'),
             OutputVariable('Zone Air Terminal Sensible Cooling Rate', '*'),
             OutputVariable('Fan Air Mass Flow Rate', '*'),
             OutputVariable('Cooling Coil Total Cooling Rate', '*'),
             OutputVariable('Cooling Coil Sensible Cooling Rate', '*'),
-            OutputVariable('Cooling Coil Electric Power', '*'),
+            OutputVariable('Cooling Coil Electricity Rate', '*'),
             OutputVariable('Heating Coil Heating Rate', '*'),
-            OutputVariable('Heating Coil Electric Power', '*'),
+            OutputVariable('Heating Coil Electricity Rate', '*'),
             OutputVariable('Schedule Value', '*'),
+            # OutputVariable('Surface Shading Device Is On Time Fraction', '*'),
+            # OutputVariable('Surface Window Blind Slat Angle', '*'),
+            # OutputVariable('System Node Temperature', '*'),
+            OutputVariable('Water Heater Tank Temperature', '*'),
+            OutputVariable('Water Heater Heat Loss Rate', '*'),
+            OutputVariable('Water Heater Use Side Mass Flow Rate', '*'),
+            OutputVariable('Water Heater Heating Rate', '*'),
+            OutputVariable('Water Heater Electricity Rate', '*'),
+            OutputVariable('Water Heater Off Cycle Parasitic Electricity Rate', '*'),
+            OutputVariable('Water Heater On Cycle Parasitic Electricity Rate', '*'),
+            OutputVariable('Water Heater Water Volume Flow Rate', '*'),
+            OutputVariable('Water Heater Water Volume', '*'),
+            OutputVariable('Water Heater Mains Water Volume', '*'),
         ]
         self.output_meters = [
             OutputMeter('Electricity:Facility'),
@@ -800,7 +1099,7 @@ class Model:
 
     def _setup_scheduling(self):
         self.schedule_type_any = ScheduleTypeLimit('AnyNumber')
-        self.schedule_type_frac = ScheduleTypeLimit('Fraction', 0, 1)
+        self.schedule_type_frac = ScheduleTypeLimit('Fraction', 0, 2.0)  # allow to go higher than 1
         # self.schedule_type_on_off = ScheduleTypeLimit('OnOff', 0, 1, 'Discrete')
         for s in [self.schedule_type_any, self.schedule_type_frac]:
             min_string = ''
@@ -810,21 +1109,30 @@ class Model:
             if s.max != -1:
                 max_string = str(s.max)
             self._add_idf_object('ScheduleTypeLimits', s.name, min_string, max_string, s.discrete_or_continuous)
-        self.schedule_infiltration = ScheduleConstant('InfiltrationSchedule', self.schedule_type_frac, 1)
         self.schedule_activity_dad = ScheduleConstant('ScheduleDadActivity', self.schedule_type_any, 115)
         self.schedule_activity_mom = ScheduleConstant('ScheduleMomActivity', self.schedule_type_any, 100)
+        self.schedule_activity_gibs = ScheduleConstant('ScheduleGibsActivity', self.schedule_type_any, 105)
+        self.schedule_activity_dax = ScheduleConstant('ScheduleDaxActivity', self.schedule_type_any, 85)
         self.schedule_equipment_office_computers = ScheduleConstant('OfficeCompSchedule', self.schedule_type_frac, 1.0)
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
-        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 21.1)
+        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 22.22)
         self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
+        self.schedule_equip_fridge = ScheduleConstant('FridgeSchedule', self.schedule_type_any, 0.3)  # runs part-time
+        self.schedule_equip_other_kitchen = ScheduleConstant('OtherKitchenSchedule', self.schedule_type_any, 1.0)
+        self.schedule_water_heater_set_point = ScheduleConstant('WaterHeaterSetpoint', self.schedule_type_any, 43.0)
         all_constant_schedules = [
-            self.schedule_infiltration,
             self.schedule_activity_dad, self.schedule_activity_mom,
+            self.schedule_activity_gibs, self.schedule_activity_dax,
             self.schedule_equipment_office_computers,
-            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point
+            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point,
+            self.schedule_equip_fridge, self.schedule_equip_other_kitchen, self.schedule_water_heater_set_point,
         ]
         for s in all_constant_schedules:
             self._add_idf_object('Schedule:Constant', s.name, s.type_limits.name, s.value)
+        self.schedule_infiltration = ScheduleCompact('InfiltrationSchedule', self.schedule_type_frac, [
+            'Through: 09/30', 'For: AllDays', 'Until: 24:00', 1.0,
+            'Through: 12/31', 'For: AllDays', 'Until: 24:00', 1.8  # fireplace was open a TON this winter, lots of OA
+        ])
         self.schedule_occupancy_dad = ScheduleCompact(
             'ScheduleDadInMainZone', self.schedule_type_frac, [
                 'Through: 04/30', 'For: AllDays', 'Until: 24:00', 0.9,
@@ -841,6 +1149,30 @@ class Model:
                 'For: WeekDays SummerDesignDay', 'Until: 16:00', 0.9, 'Until: 20:00', 0.6, 'Until: 24:00', 0.9,
                 'For: AllOtherDays', 'Until: 24:00', 0.7,
                 'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.9,
+            ]
+        )
+        self.schedule_occupancy_gibs = ScheduleCompact(
+            'ScheduleGibsInMainZone', self.schedule_type_frac, [
+                'Through: 05/15',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+                'Through: 09/01',
+                'For: AllDays', 'Until: 24:00', 0.7,
+                'Through: 12/31',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+            ]
+        )
+        self.schedule_occupancy_dax = ScheduleCompact(
+            'ScheduleDaxInMainZone', self.schedule_type_frac, [
+                'Through: 05/15',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
+                'Through: 09/01',
+                'For: AllDays', 'Until: 24:00', 0.7,
+                'Through: 12/31',
+                'For: WeekDays', 'Until: 08:00', 1.0, 'Until: 15:00', 0.1, 'Until: 24:00', 0.9,
+                'For: AllOtherDays', 'Until: 24:00', 0.8,
             ]
         )
         self.schedule_lights_dax = ScheduleCompact(
@@ -944,8 +1276,41 @@ class Model:
                 'Through: 12/31', 'For: AllDays', 'Until: 02:00', 0, 'Until: 04:00', 1, 'Until: 24:00', 0
             ]
         )
+        self.schedule_equip_oven = ScheduleCompact(
+            'OvenSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 16:30', 0.1, 'Until: 18:00', 0.8, 'Until: 24:00', 0.0
+            ]
+        )
+        self.schedule_pool_pump = ScheduleCompact(
+            # Pool pump ran pretty much all summer
+            # Pool looked generally ready by June 1 but no confirmed of final day; assuming August 31 for now
+            'PoolPumpSchedule', self.schedule_type_frac, [
+                'Through: 05/31', 'For: AllDays', 'Until: 24:00', 0.0,
+                'Through: 08/31', 'For: AllDays', 'Until: 24:00', 1.0,
+                'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.0,
+            ]
+        )
+        self.schedule_septic_pump = ScheduleCompact(
+            # Septic pump won't necessarily run every day, and the duration is really tied with water use
+            # For now just assuming a small run time, but later tie it closely with water usage
+            'SepticPumpSchedule', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays', 'Until: 02:00', 0.0, 'Until: 02:30', 1.0, 'Until: 24:00', 0.0
+            ]
+        )
+        self.schedule_water_heater_use = ScheduleCompact(
+            'WaterHeaterUse', self.schedule_type_frac, [
+                'Through: 12/31', 'For: AllDays',
+                'Until: 07:00', 0.0,
+                'Until: 08:00', 0.01,  # occasional showers
+                'Until: 18:00', 0.05,  # laundry, dishes, cooking, washing hands
+                'Until: 20:00', 0.2,  # showers
+                'Until: 24:00', 0.0
+            ]
+        )
         all_compact_schedules = [
+            self.schedule_infiltration,
             self.schedule_occupancy_dad, self.schedule_occupancy_mom,
+            self.schedule_occupancy_gibs, self.schedule_occupancy_dax,
             self.schedule_lights_dax, self.schedule_lights_gibs,
             self.schedule_lights_main_bath,
             self.schedule_lights_study,
@@ -959,20 +1324,35 @@ class Model:
             self.schedule_lights_mom_closet, self.schedule_lights_dad_closet,
             self.schedule_lights_utility,
             self.schedule_lights_garage,
-            self.schedule_equip_dishwasher,
+            self.schedule_equip_dishwasher, self.schedule_equip_oven,
+            self.schedule_pool_pump, self.schedule_septic_pump,
+            self.schedule_water_heater_use,
         ]
         for s in all_compact_schedules:
             self._add_idf_object('Schedule:Compact', s.name, s.type_limits.name, *s.fields)
 
     def _setup_internal_gains(self):
         # infiltration
+        assumed_effective_leakage_area = 500  # cm^2
+        assumed_stack_coefficient = 0.000145  # single story house value, Handbook 2017 (pg 16.24)
+        infiltration_house_temp = 21.1  # at design infiltration conditions
+        infiltration_outdoor_temp = -11  # at design infiltration conditions
+        delta_t = abs(infiltration_house_temp - infiltration_outdoor_temp)
+        assumed_wind_coefficient = 0.000246  # single story, class 2 shelter (rural, no obstructions)
+        average_wind_speed = 6  # m/s
+        design_infiltration_flow_rate = (assumed_effective_leakage_area / 1000) * sqrt(
+            assumed_stack_coefficient * delta_t + assumed_wind_coefficient * average_wind_speed ** 2
+        )
         self.infiltration_zone = Infiltration(
-            'Main Zone Infiltration', self.zone_indoor, self.schedule_infiltration, 0.010
+            'Main Zone Infiltration', self.zone_indoor, self.schedule_infiltration, design_infiltration_flow_rate
         )
         self.infiltration_garage = Infiltration(
-            'Garage Infiltration', self.zone_garage, self.schedule_infiltration, 0.028
+            'Garage Infiltration', self.zone_garage, self.schedule_infiltration, design_infiltration_flow_rate
         )
-        for i in [self.infiltration_zone, self.infiltration_garage]:
+        self.infiltration_attic = Infiltration(
+            'Attic Infiltration', self.zone_attic, self.schedule_infiltration, design_infiltration_flow_rate
+        )
+        for i in [self.infiltration_zone, self.infiltration_garage, self.infiltration_attic]:
             self._add_idf_object(
                 'ZoneInfiltration:DesignFlowRate',
                 i.name, i.zone.name, i.schedule.name,
@@ -986,7 +1366,16 @@ class Model:
         self.person_mom_main_zone = Person(
             'Mom', self.zone_indoor, self.schedule_occupancy_mom, self.schedule_activity_mom
         )
-        for p in [self.person_dad_main_zone, self.person_mom_main_zone]:
+        self.person_gibs_main_zone = Person(
+            'Gibs', self.zone_indoor, self.schedule_occupancy_gibs, self.schedule_activity_gibs
+        )
+        self.person_dax_main_zone = Person(
+            'Dax', self.zone_indoor, self.schedule_occupancy_dax, self.schedule_activity_dax
+        )
+        all_people = [
+            self.person_dad_main_zone, self.person_mom_main_zone, self.person_gibs_main_zone, self.person_dax_main_zone
+        ]
+        for p in all_people:
             self._add_idf_object(
                 'People', p.name, p.zone.name, p.in_zone_schedule.name,
                 'People', 1, '', '', 0.3, '', p.activity_schedule.name
@@ -1031,15 +1420,27 @@ class Model:
                 'Lights', light.name, light.zone.name, light.schedule.name, 'LightingLevel', light.design_level,
                 '', '', 0.0, light.fraction_radiant, light.fraction_visible, 0, 'GeneralLights'
             )
-        self.equip_office_comps = Equipment(
-            'Office computers', self.zone_indoor, self.schedule_equipment_office_computers, 400
+        self.equip_office_comps = Equipment(  # incl both comps, router, printer, speakers
+            'Office computers', self.zone_indoor, self.schedule_equipment_office_computers, 600
         )
         self.equip_kitchen_dishwasher = Equipment(
             'Dishwasher', self.zone_indoor, self.schedule_equip_dishwasher, 300, 0.3, 0.4
         )
+        self.equip_kitchen_oven = Equipment(
+            'StoveOven', self.zone_indoor, self.schedule_equip_oven, 5000, 0.3, 0.1
+        )
+        self.equip_kitchen_fridge = Equipment(
+            'Fridge', self.zone_indoor, self.schedule_equip_fridge, 100, 0.3, 0.1
+        )
+        self.equip_kitchen_others = Equipment(  # blender, coffee maker, etc.
+            'OtherKitchenEquipment', self.zone_indoor, self.schedule_equip_other_kitchen, 100, 0.3, 0.0
+        )
         all_equipment = [
             self.equip_office_comps,
-            self.equip_kitchen_dishwasher
+            self.equip_kitchen_dishwasher,
+            self.equip_kitchen_oven,
+            self.equip_kitchen_fridge,
+            self.equip_kitchen_others
         ]
         for equip in all_equipment:
             self._add_idf_object(
@@ -1047,9 +1448,42 @@ class Model:
                 equip.design_level, '', '', equip.fraction_latent, equip.fraction_radiant, 0
             )
 
-    def _water_use(self):
-        # water heater, water usage, etc
-        pass
+    def _setup_exterior_energy_use(self):
+        # Pool pump is a HydroTools 2 HP pump (search for item 72206 on HydroTools or PoolFactory
+        # Water side pumping power is 2 HP
+        # Operates with 115 V power, rated at 11.5 A, which would be 1322.5 W
+        # For now I will assume a power factor of 1, so we'll just use that value as the design value
+        power_factor = 0.7
+        self.pool_pump = ExteriorEquipment('PoolPump', 'Electricity', self.schedule_pool_pump, 1322.5 * power_factor)
+        # No idea about the model of septic system sprinkler sump pump, assuming a moderate model from
+        # septicsolutions.com, for now the Little Giant WE20
+        # 20 GPM, 150 ft of head, 1/2 hp output, 115 V 10 A input.  Assuming power factor of 1, we get: 1150 W
+        self.septic_sprinkler_pump = ExteriorEquipment('SepticPump', 'Electricity', self.schedule_septic_pump, 1150.0)
+        all_exterior_equipment = [
+            self.pool_pump, self.septic_sprinkler_pump
+        ]
+        for equip in all_exterior_equipment:
+            self._add_idf_object(
+                'Exterior:FuelEquipment', equip.name, equip.fuel, equip.schedule.name, equip.design_level
+            )
+
+    def _water_use(self):  # water heater, water usage, etc
+        # Water heater is a Bradford White RE340S6
+        # DOE Rated storage volume is 36 gallons = 0.163659
+        # Heating setpoint scheduled above, not sure exactly, but assuming 43 C, so like 110 F
+        # Dead band temperature difference: can't find any information, assuming 3
+        # Max temperature limit: can't find any information, assuming 50 C (about 125 F)
+        # Heating is provided by a single lower element at 5500/4000 W (240/208 V) -- assuming 4500 W for now
+        # Thermal efficiency, or energy factor (EF) for electric hot water heaters is estimated at 0.9
+        # Parasitic fuel rates are tiny, for now assuming 0 watts, but would really be a small bit for the controller
+        # ambient losses based on an example file, TODO: Calculate this better
+        # Peak use flow rate, assuming 2 GPM (0.000126 m3/s) of hot water flow TODO: Add cold water use to mix with this
+        # TODO: Use water usage from water bills to estimate overall water consumption and split by hot/cold usage
+        self.water_heater = WaterHeaterMixed(
+            "WaterHeater", 0.163659, self.schedule_water_heater_set_point, 3, 50, 4500, 0.9, 0.0, 0.0,
+            self.zone_garage, 1.0, 1.0, 0.00012618, self.schedule_water_heater_use
+        )
+        self._add_idf_object('WaterHeater:Mixed', *self.water_heater.to_idf_object())
 
     def _setup_hvac(self):
         # hvac unit is:
@@ -1106,7 +1540,7 @@ class Model:
         #   Indoor Full-Load Air Volume Rate (A2 StandardCFM): 1400
 
         # set up some system properties
-        system_air_volume_flow_rate_cfm = 1400  # CFM
+        system_air_volume_flow_rate_cfm = 1400 * 0.9  # CFM, degrading slightly for long ducting and filters
         rated_cooling_capacity_btu_h = 45500
         rated_heating_capacity_btu_h = 44500
         rated_heating_capacity_watts = rated_heating_capacity_btu_h * 0.29
@@ -1116,9 +1550,9 @@ class Model:
         sys_vol_flow = system_air_volume_flow_rate_cfm * 0.00047194745
         max_supply_temp_for_supplemental_heater = 40
         seer_cooling_btu_per_watt = 14
-        cop_cooling = seer_cooling_btu_per_watt / 3.412
+        cop_cooling = (seer_cooling_btu_per_watt / 3.412)
         hspf_heating_btu_per_watt = 8.2
-        cop_heating = hspf_heating_btu_per_watt / 3.412
+        cop_heating = (hspf_heating_btu_per_watt / 3.412)
         min_outdoor_temp_for_compressor = -8
         rated_shr = 0.7  # assumed
         supplemental_heater_capacity_watts = 10000  # assumed
@@ -1195,24 +1629,24 @@ class Model:
             min_outdoor_temp_for_compressor, '', '', '', '', '', '', defrost_time_period
         )
         self._add_idf_object(
-            'Curve:Cubic',
-            'HtgCapFT', 0.758746, 0.027626, 0.000148716, 0.0000034992, -20, 20
-        )
-        self._add_idf_object(
-            'Curve:Cubic',
-            'HtgCapFF', 0.84, 0.16, 0.0, 0.0, 0.5, 1.5
-        )
-        self._add_idf_object(
-            'Curve:Cubic',
-            'HtgEirFT', 1.19248, -0.0300438, 0.00103745, -0.000023328, -20, 20
+            'Curve:Biquadratic',
+            'HtgCapFT', 0.876825, -0.002955, -0.000058, 0.025335, 0.000196, -0.000043, -20, 35, -20, 35
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HtgEirFF', 1.3824, -0.4336, 0.0512, 0.0, 1.0
+            'HtgCapFF', 0.694045465, 0.474207981, -0.168253446, 0.5, 1.5
+        )
+        self._add_idf_object(
+            'Curve:Biquadratic',
+            'HtgEirFT', 0.704658, 0.008767, 0.000625, -0.009037, 0.000738, -0.001025, -20, 35, -20, 35
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'HtgPLF', 0.75, 0.25, 0.0, 0.0, 1.0
+            'HtgEirFF', 2.185418751, -1.942827919, 0.757409168, 0.0, 1.0
+        )
+        self._add_idf_object(
+            'Curve:Quadratic',
+            'HtgPLF', 0.9, 0.1, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'Curve:Biquadratic',
@@ -1225,28 +1659,28 @@ class Model:
         self._add_idf_object(
             'Coil:Cooling:DX:SingleSpeed',
             'CoolingCoil', '', rated_cooling_capacity_watts, rated_shr, cop_cooling, sys_vol_flow, '',
-            'FanOutlet', 'CoolingCoilOutlet', 'ClgCapFT', 'ClgCapFF', 'ClgEirFT', 'ClgEirFF', 'ClgPLF', '',
+            'FanOutlet', 'CoolingCoilOutlet', 'ClgCapFT', 'ClgCapFF', 'ClgEirFT', 'ClgEirFF', 'ClgPLF', 12.0,
             '', '', '', '', 'CoilCondInlet'
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'ClgCapFT', 0.94258779, 0.00954335, 0.0006838, -0.01104267, 0.00000525, -0.0000097, 12.77, 23.88, 18.0, 46.1
+            'ClgCapFT', 1.55736, -0.074448, 0.003099, 0.00146, -0.000041, -0.000427, 0, 50, 0, 50
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgCapFF', 0.8, 0.2, 0.0, 0.5, 1.5
+            'ClgCapFF', 0.718664047, 0.41797409, -0.136638137, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Biquadratic',
-            'ClgEirFT', 0.34241441, 0.03488501, -0.000624, 0.00497722, 0.00043795, -0.00072803, 12.77, 23.88, 18.0, 46.1
+            'ClgEirFT', -0.350448, 0.11681, -0.0034, -0.001226, 0.000601, -0.000467, 12.77, 23.88, 18.0, 46.1
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgEirFF', 1.1552, -0.1808, 0.0256, 0.5, 1.5
+            'ClgEirFF', 1.143487507, -0.13943972, -0.004047787, 0.5, 1.5
         )
         self._add_idf_object(
             'Curve:Quadratic',
-            'ClgPLF', 0.85, 0.15, 0.0, 0.0, 1.0
+            'ClgPLF', 0.9, 0.1, 0.0, 0.0, 1.0
         )
         self._add_idf_object(
             'OutdoorAir:Node',

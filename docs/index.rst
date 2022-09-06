@@ -1,8 +1,3 @@
-.. Emerald Modeling documentation master file, created by
-   sphinx-quickstart on Mon Apr  6 13:53:07 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Emerald Modeling's documentation!
 ============================================
 
@@ -13,12 +8,20 @@ Here are some things we've done so far:
  - Gotten electricity usage data from bills
  - Estimated thermal properties of the envelope
  - Generated basic EnergyPlus inputs
+ - It runs EnergyPlus 22.1 on GitHub Actions now
 
 Still to do:
 
- - On Travis, it should download E+ 9.3 and run E+ through it.
- - Add outputs as individual classes, separate out all boilerplate stuff
- - Lots of things.
+ - Add water use and tie to hot water heater
+ - Add garage refrigerator
+ - How about dishwasher -- check Fundamentals for modeling appliances, runtime, etc.
+ - Talk with Honeywell about historical data / old emails, num heating/cooling hours per month
+ - Determine if energy usage timing is reasonable
+ - Revisit fireplace infiltration
+ - Update these docs with information about the house geometry/properties
+ - Add outputs to individual structure classes
+ - Add years 2020 and 2021
+ - Sometime improve roof geometry, it's OK for now
 
 .. toctree::
    :maxdepth: 2

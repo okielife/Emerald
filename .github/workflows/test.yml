@@ -1,0 +1,33 @@
+name: Exercise
+
+on:
+  push
+
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      id: setup-python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install Python Dependencies
+      run: pip install -r requirements.txt
+
+    - name: Install System Dependencies
+      run: sudo apt-get install -y gnuplot
+
+    - name: Run Tests
+      run: python3 setup.py run
+
+    - name: Lint the code
+      run: flake8 pyemerald
