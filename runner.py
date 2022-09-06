@@ -1,5 +1,6 @@
 from datetime import datetime
 import distutils.cmd
+from json import loads
 import os
 from pathlib import Path
 from subprocess import check_call
@@ -40,7 +41,6 @@ class Runner(distutils.cmd.Command):
             ep_install_path = extract_dir / 'EnergyPlus-22.1.0-ed759b17ee-Linux-Ubuntu20.04-x86_64'
 
         sys.path.insert(0, str(ep_install_path))
-        # noinspection PyUnresolvedReferences
         from pyenergyplus.api import EnergyPlusAPI
 
         # set up a run dir
@@ -56,9 +56,62 @@ class Runner(distutils.cmd.Command):
         with open(idf_path, 'w') as f:
             f.write(full_idf_string)
 
-        # run the IDF using the EnergyPlus API (cool!)
+        # initialize the API and generate a state object
         api = EnergyPlusAPI()
         state = api.state_manager.new_state()
+
+        # register callbacks to allow weather data actuation
+        search_start_index = 0
+        got_handles = False
+        oa_temp_actuator = -1
+        dp_temp_actuator = -1
+        rh_temp_actuator = -1
+
+        weather_override_file = this_file_path.parent / 'pyemerald' / 'weather' / 'weather_underground' / '2019.json'
+        with open(weather_override_file) as f:
+            time_series_data = loads(f.read())['weather']
+
+        def callback(s):
+            nonlocal api, time_series_data, got_handles, oa_temp_actuator, dp_temp_actuator, rh_temp_actuator
+            nonlocal search_start_index
+            if not got_handles:
+                if not api.exchange.api_data_fully_ready(s):
+                    return
+                get = api.exchange.get_actuator_handle
+                oa_temp_actuator = get(s, "Weather Data", "Outdoor Dry Bulb", "Environment")
+                dp_temp_actuator = get(s, "Weather Data", "Outdoor Dew Point", "Environment")
+                rh_temp_actuator = get(s, "Weather Data", "Outdoor Relative Humidity", "Environment")
+                if oa_temp_actuator == -1:
+                    print("***Invalid handles, check spelling and sensor/actuator availability")
+                    sys.exit(1)
+                # once we've got the handles, let's write the available data
+                with open('/tmp/available_data.csv', 'w') as f_data:
+                    f_data.write(api.exchange.list_available_api_data_csv(s).decode('utf-8'))
+                got_handles = True
+            if api.exchange.warmup_flag(s):
+                return
+            current_sim_hours_into_year = api.exchange.current_sim_time(s)
+            data_point_to_use = time_series_data[-1]  # assume the final item
+            for i, data_point in enumerate(time_series_data):
+                if i < search_start_index:
+                    continue
+                if data_point['time'] > current_sim_hours_into_year:
+                    data_point_to_use = data_point
+                    search_start_index = i
+                    break
+            if data_point_to_use['temp'] is not None:
+                api.exchange.set_actuator_value(s, oa_temp_actuator, data_point_to_use['temp'])
+            if data_point_to_use['dewPt'] is not None:
+                api.exchange.set_actuator_value(s, dp_temp_actuator, data_point_to_use['dewPt'])
+            if data_point_to_use['rh'] is not None:
+                api.exchange.set_actuator_value(s, rh_temp_actuator, data_point_to_use['rh'])
+            # eventually actuate these as well:
+            # Diffuse Solar
+            # Direct Solar
+            # Wind Speed
+            # Wind Direction
+
+        api.runtime.callback_begin_zone_timestep_after_init_heat_balance(state, callback)
         print("Running in: " + str(idf_run_dir))
         return_val = api.runtime.run_energyplus(
             state, ['-w', str(WeatherManager().path_to_merged_epw_file()), '-d', str(idf_run_dir), str(idf_path)]

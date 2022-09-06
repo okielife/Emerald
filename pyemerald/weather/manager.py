@@ -169,7 +169,7 @@ class WeatherManager:
 
 
 if __name__ == "__main__":
-    dp = WeatherManager.dew_point(35, 65)
+    # dp = WeatherManager.dew_point(35, 65)
     w = WeatherManager()
     mesonet_contents = w.parse_and_average_mesonet_data()
     epw_contents = EPWFile(w.path_to_tmy_okc_epw_file())

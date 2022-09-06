@@ -43,8 +43,7 @@ class Model:
         self._setup_exterior_energy_use()
         self._setup_materials()
         self._setup_constructions()
-        self._setup_floor_vertices()
-        self._setup_roof_eave_vertices()
+        self._setup_vertices()
         self._setup_surfaces()
         self._setup_windows_and_doors()
         self._water_use()
@@ -72,12 +71,14 @@ class Model:
         ]
 
     @staticmethod
-    def _build_fake_attic_wall_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom: float, top: float) -> List[Vertex3D]:
+    def _build_fake_attic_wall_vertices(v_a: Vertex2D, v_b: Vertex2D, bottom: float) -> List[Vertex3D]:
         """The vertices should be given in clockwise order as you walk around the exterior of the space"""
+        v_fake_attic_point = Vertex2D('95', 10.8694694, 7.552061782)
         return [
             Vertex3D.from_vertex_and_height(v_a, bottom),
-            Vertex3D.from_vertex_and_height(v_a, top),
-            Vertex3D.from_vertex_and_height(v_b, top),
+            # Vertex3D.from_vertex_and_height(v_a, top),
+            # Vertex3D.from_vertex_and_height(v_b, top),
+            Vertex3D.from_vertex_and_height(v_fake_attic_point, 6.2),
             Vertex3D.from_vertex_and_height(v_b, bottom)
         ]
 
@@ -239,72 +240,117 @@ class Model:
         for c in all_constructions:
             self._add_idf_object('Construction', c.name, *[layer.name for layer in c.layers])
 
-    def _setup_floor_vertices(self):
-        # set up vertices
-        self.v_1 = Vertex2D('1', 28.212034, 43.770042)
-        self.v_2 = Vertex2D('2', 29.521912, 45.796454)
-        self.v_3 = Vertex2D('3', 27.004772, 47.423578)
-        self.v_4 = Vertex2D('4', 29.127958, 50.70856)
-        self.v_5 = Vertex2D('5', 32.00781, 48.847248)
-        self.v_6 = Vertex2D('6', 33.05556, 50.46853)
-        self.v_7 = Vertex2D('7', 32.031686, 51.1302)
-        self.v_8 = Vertex2D('8', 34.21253, 54.499002)
-        self.v_9 = Vertex2D('9', 34.722816, 54.169056)
-        self.v_10 = Vertex2D('10', 36.543234, 56.984138)
-        self.v_11 = Vertex2D('11', 35.68954, 57.536588)
-        self.v_12 = Vertex2D('12', 36.682426, 59.071764)
-        self.v_13 = Vertex2D('13', 36.29787, 59.321192)
-        self.v_14 = Vertex2D('14', 38.090602, 62.093856)
-        self.v_15 = Vertex2D('15', 38.474396, 61.845444)
-        self.v_16 = Vertex2D('16', 39.467536, 63.381128)
-        self.v_17 = Vertex2D('17', 43.349418, 60.872878)
-        self.v_18 = Vertex2D('18', 45.555408, 64.285876)
-        self.v_19 = Vertex2D('19', 51.123088, 60.68695)
-        self.v_20 = Vertex2D('20', 43.416474, 48.76165)
-        self.v_21 = Vertex2D('21', 43.949112, 48.41748)
-        self.v_22 = Vertex2D('22', 41.59123, 44.769532)
-        self.v_23 = Vertex2D('23', 41.0591, 45.113956)
-        self.v_24 = Vertex2D('24', 40.478964, 44.21886)
-        self.v_25 = Vertex2D('25', 41.01211, 43.874182)
-        self.v_26 = Vertex2D('26', 40.061388, 42.40149)
-        self.v_27 = Vertex2D('27', 39.52748, 42.74693)
-        self.v_28 = Vertex2D('28', 36.65982, 38.309042)
-        self.v_29 = Vertex2D('29', 33.332674, 40.45966)
-        self.v_30 = Vertex2D('30', 32.945832, 39.863014)
-        self.v_31 = Vertex2D('31', 30.599634, 41.379902)
-        self.v_32 = Vertex2D('32', 30.986984, 41.975786)
-        self.v_34 = Vertex2D('34', 39.542212, 55.136542)
-        self.v_35 = Vertex2D('35', 41.501822, 58.192924)
-        self.v_36 = Vertex2D('36', 47.154846, 54.547008)
-
-    def _setup_roof_eave_vertices(self):
-        self.v_37 = Vertex2D('37', 27.685238, 43.657012)
-        self.v_38 = Vertex2D('38', 28.994862, 45.683424)
-        self.v_39 = Vertex2D('39', 26.477722, 47.310548)
-        self.v_40 = Vertex2D('40', 27.746198, 49.272952)
-        self.v_41 = Vertex2D('41', 29.014674, 51.23561)
-        self.v_42 = Vertex2D('42', 32.240982, 56.227218)
-        self.v_43 = Vertex2D('43', 34.609024, 54.696868)
-        self.v_44 = Vertex2D('44', 36.015168, 56.872632)
-        self.v_45 = Vertex2D('45', 35.161982, 57.42432)
-        self.v_46 = Vertex2D('46', 36.154614, 58.960258)
-        self.v_47 = Vertex2D('47', 35.77082, 59.208416)
-        self.v_48 = Vertex2D('48', 36.873688, 60.914788)
-        self.v_49 = Vertex2D('49', 37.97681, 62.621414)
-        self.v_50 = Vertex2D('50', 38.360858, 62.373256)
-        self.v_51 = Vertex2D('51', 39.35349, 63.909194)
-        self.v_52 = Vertex2D('52', 43.23588, 61.399674)
-        self.v_53 = Vertex2D('53', 45.44187, 64.812926)
-        self.v_54 = Vertex2D('54', 51.64963, 60.800742)
-        self.v_55 = Vertex2D('55', 43.942254, 48.87595)
-        self.v_56 = Vertex2D('56', 47.035466, 46.876716)
-        self.v_57 = Vertex2D('57', 42.168318, 39.346632)
-        self.v_58 = Vertex2D('58', 39.075106, 41.345866)
-        self.v_59 = Vertex2D('59', 36.772596, 37.783262)
-        self.v_60 = Vertex2D('60', 33.444688, 39.934388)
-        self.v_61 = Vertex2D('61', 33.058608, 39.33698)
-        self.v_62 = Vertex2D('62', 30.07233, 41.26738)
-        self.v_63 = Vertex2D('63', 30.458156, 41.864534)
+    def _setup_vertices(self):
+        # All vertices are listed from the CAD model, which is the official reference
+        # The CAD model should be zeroed at the *exterior* southwestern corner of the guest bathroom
+        # This happens to be point 1 in the drawing
+        # This will result in a few negative vertex values in both the X and Y directions, but it's
+        #  easier than setting some arbitrary origin
+        # Keep in mind that the units should be in meters
+        # Also keep in mind the vertex numbers are based on the resources/PointLabels.png file
+        # Also keep in the mind the geometry is measured at the exterior of the walls
+        # The easiest way to get these from the CAD file is to make sure the origin is set, make sure
+        #  the file is in inches, bump up the distance precision, set only snap to intersection, and then create a
+        #  2-point line from the origin, and note down where your mouse is at for the second point
+        # MAIN FLOOR PLAN OUTLINE VERTICES
+        self.v_1 = Vertex2D('1', 0, 0)
+        self.v_2 = Vertex2D('2', 1.309841805, 2.026544715)
+        self.v_3 = Vertex2D('3', -1.2073400542, 3.6535061042)
+        self.v_4 = Vertex2D('4', 0.91598242, 6.9386417488)
+        self.v_5 = Vertex2D('5', 3.7958091216, 5.0772876102)
+        self.v_6 = Vertex2D('6', 4.8436825656, 6.6985233822)
+        self.v_7 = Vertex2D('7', 3.8197441766, 7.3603381876)
+        self.v_8 = Vertex2D('8', 5.9982178994, 10.7308020334)
+        self.v_9 = Vertex2D('9', 6.5101870812, 10.399894618)
+        self.v_10 = Vertex2D('10', 8.3301778024, 13.2157251814)
+        self.v_11 = Vertex2D('11', 7.4768958158, 13.767237515)
+        self.v_12 = Vertex2D('12', 8.4696180112, 15.3031450858)
+        self.v_13 = Vertex2D('13', 8.0856411058, 15.551325641)
+        self.v_14 = Vertex2D('14', 9.87805619, 18.3244920784)
+        self.v_15 = Vertex2D('15', 10.2620330954, 18.0763115232)
+        self.v_16 = Vertex2D('16', 11.2547552908, 19.612219094)
+        self.v_17 = Vertex2D('17', 15.1371883184, 17.1028379812)
+        self.v_18 = Vertex2D('18', 17.3432376528, 20.5159659276)
+        self.v_19 = Vertex2D('19', 22.910902616, 16.917347928)
+        self.v_20 = Vertex2D('20', 15.2035177514, 4.992732204)
+        self.v_21 = Vertex2D('21', 15.7368189708, 4.6480369828)
+        self.v_22 = Vertex2D('22', 13.3791037472, 1.0002565212)
+        self.v_23 = Vertex2D('23', 12.8458025024, 1.344951717)
+        self.v_24 = Vertex2D('24', 12.2667145572, 0.4490056298)
+        self.v_25 = Vertex2D('25', 12.800015802, 0.104310434)
+        self.v_26 = Vertex2D('26', 11.848657024, -1.3676009986)
+        self.v_27 = Vertex2D('27', 11.3153557792, -1.0229057774)
+        self.v_28 = Vertex2D('28', 8.4474916394, -5.4599721128)
+        self.v_29 = Vertex2D('29', 5.1196919196, -3.3090740016)
+        self.v_30 = Vertex2D('30', 4.733633281, -3.9063713846)
+        self.v_31 = Vertex2D('31', 2.3871078242, -2.3897124672)
+        self.v_32 = Vertex2D('32', 2.7731664374, -1.7924150842)
+        # VERTICES FOR INTERNAL/GARAGE BOUNDARY WALLS
+        self.v_34 = Vertex2D('34', 11.2727001368, 11.4045792736)
+        self.v_35 = Vertex2D('35', 13.287027528, 14.4274935478)
+        self.v_36 = Vertex2D('36', 18.940018889, 10.7737254934)
+        # EAVE VERTICES
+        self.v_37 = Vertex2D('37', -0.5267978796, -0.1131636294)
+        self.v_38 = Vertex2D('38', 0.7830439254, 1.9133810856)
+        self.v_39 = Vertex2D('39', -1.7341379338, 3.5403424748)
+        self.v_40 = Vertex2D('40', 4.1103934302, 12.4046384622)
+        self.v_41 = Vertex2D('41', 6.3970234772, 10.9266924976)
+        self.v_42 = Vertex2D('42', 7.8033799228, 13.102561552)
+        self.v_43 = Vertex2D('43', 6.9500979362, 13.6540738856)
+        self.v_44 = Vertex2D('44', 7.9428201316, 15.1899814564)
+        self.v_45 = Vertex2D('45', 7.5588432516, 15.4381620116)
+        self.v_46 = Vertex2D('46', 9.764892586, 18.851289958)
+        self.v_47 = Vertex2D('47', 10.148869466, 18.6031094028)
+        self.v_48 = Vertex2D('48', 11.1415916868, 20.1390169736)
+        self.v_49 = Vertex2D('49', 14.3413991302, 18.0708457226)
+        self.v_50 = Vertex2D('50', 14.8377602152, 18.838799508)
+        self.v_51 = Vertex2D('51', 15.5203857994, 18.3975896462)
+        self.v_52 = Vertex2D('52', 17.2300740488, 21.0427637818)
+        self.v_53 = Vertex2D('53', 23.4377004702, 17.0305115574)
+        self.v_54 = Vertex2D('54', 15.7303156056, 5.1058958334)
+        self.v_55 = Vertex2D('55', 18.8234628102, 3.1066636114)
+        self.v_56 = Vertex2D('56', 13.9563654578, -4.4235514272)
+        self.v_57 = Vertex2D('57', 10.8632182786, -2.4243192306)
+        self.v_58 = Vertex2D('58', 8.5606552688, -5.986769967)
+        self.v_59 = Vertex2D('59', 5.2328555236, -3.8358718812)
+        self.v_60 = Vertex2D('60', 4.846796885, -4.4331692642)
+        self.v_61 = Vertex2D('61', 1.8603099446, -2.5028760966)
+        self.v_62 = Vertex2D('62', 2.2463685832, -1.9055787136)
+        # WINDOW/WALL VERTICES
+        self.v_63 = Vertex2D('63', -0.4076465812, 4.8907659106)
+        self.v_64 = Vertex2D('64', 0.116288947, 5.701381917)
+        self.v_65 = Vertex2D('65', 4.0302024298, 5.4399333162)
+        self.v_66 = Vertex2D('66', 4.5265635148, 6.2078871016)
+        self.v_67 = Vertex2D('67', 4.45398398, 8.3416134158)
+        self.v_68 = Vertex2D('68', 5.363978096, 9.7495268052)
+        self.v_69 = Vertex2D('69', 7.1720018866, 11.423833007)
+        self.v_70 = Vertex2D('70', 7.668362997, 12.1917867924)
+        self.v_71 = Vertex2D('71', 8.7336681562, 16.5539320432)
+        self.v_72 = Vertex2D('72', 9.230029165, 17.3218856508)
+        self.v_73 = Vertex2D('73', 11.8947160124, 19.1985853518)
+        self.v_74 = Vertex2D('74', 13.8999278262, 17.9025319114)
+        self.v_75 = Vertex2D('75', 14.3692320692, 17.5992006918)
+        self.v_76 = Vertex2D('76', 15.051858517, 17.1579902712)
+        self.v_77 = Vertex2D('77', 18.1111906762, 20.0196053252)
+        self.v_78 = Vertex2D('78', 22.1429495926, 17.4137085304)
+        self.v_79 = Vertex2D('79', 18.3747192322, 9.8991122312)
+        self.v_80 = Vertex2D('80', 17.7404800384, 8.9178379428)
+        self.v_81 = Vertex2D('81', 16.6788187378, 7.275270057)
+        self.v_82 = Vertex2D('82', 15.7412422792, 5.8246821276)
+        self.v_83 = Vertex2D('83', 15.0750046734, 3.6240993812)
+        self.v_84 = Vertex2D('84', 14.04091807, 2.0241941228)
+        self.v_85 = Vertex2D('85', 12.81822684, 1.3022875402)
+        self.v_86 = Vertex2D('86', 12.335653002, 0.5556649542)
+        self.v_87 = Vertex2D('87', 11.2326284872, -1.150898765)
+        self.v_88 = Vertex2D('88', 10.7500546492, -1.897521351)
+        self.v_89 = Vertex2D('89', 9.729756766, -3.476093124)
+        self.v_90 = Vertex2D('90', 9.2471851378, -4.222712281)
+        self.v_91 = Vertex2D('91', 3.816354191, -3.313495024)
+        self.v_92 = Vertex2D('92', 3.3043868888, -2.9825888532)
+        self.v_93 = Vertex2D('93', 1.2799238308, -0.8272690592)
+        self.v_94 = Vertex2D('94', 0.2986487804, -0.1930293828)
+        # ONE SINGLE ROOFTOP VERTEX
+        self.v_95 = Vertex2D('95', 10.8694693964, 7.5520617818)
 
     def _setup_surfaces(self):
         # set up surfaces
@@ -314,18 +360,18 @@ class Model:
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_1, self.v_2, ceiling_height))
-        self.surface_dax_exterior_wall_south = Surface(
-            'Dax Exterior Wall South',
+        self.surface_nw_bedroom_exterior_wall_south = Surface(
+            'Northwest Bedroom Exterior Wall South',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_2, self.v_3, ceiling_height))
-        self.surface_dax_exterior_wall_west = Surface(
-            'Dax Exterior Wall West',
+        self.surface_nw_bedroom_exterior_wall_west = Surface(
+            'Northwest Bedroom Exterior Wall West',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_3, self.v_4, ceiling_height))
-        self.surface_dax_exterior_wall_north = Surface(
-            'Dax Exterior Wall North',
+        self.surface_nw_bedroom_exterior_wall_north = Surface(
+            'Northwest Bedroom Exterior Wall North',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_4, self.v_5, ceiling_height))
@@ -401,7 +447,7 @@ class Model:
             self.zone_garage, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_15, self.v_16, ceiling_height))
-        self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door = Surface(
+        self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door = Surface(
             'Garage Exterior Wall North B With Small Garage Door And Man Door',
             self.zone_garage, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
@@ -462,13 +508,13 @@ class Model:
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_26, self.v_27, ceiling_height))
-        self.surface_living_and_gibson_exterior_wall_east = Surface(
-            'Living And Gibs Exterior Wall East',
+        self.surface_living_and_se_bed_exterior_wall_east = Surface(
+            'Living And Southeast Bedroom Exterior Wall East',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_27, self.v_28, ceiling_height))
-        self.surface_gibson_exterior_wall_south = Surface(
-            'Gibs Exterior Wall South',
+        self.surface_se_bedroom_exterior_wall_south = Surface(
+            'Southeast Bedroom Exterior Wall South',
             self.zone_indoor, SurfaceType.WALL, self.construction_exterior_wall,
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_28, self.v_29, ceiling_height))
@@ -493,7 +539,7 @@ class Model:
             BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
             self._build_wall_vertices(self.v_32, self.v_1, ceiling_height))
         # now the ceilings/roofs - need to fix this up later
-        ceiling_vertex_list_ccw_from_above = [
+        indoor_ceiling_vertex_list_ccw_from_above = [
             self.v_32,
             self.v_31,
             self.v_30,
@@ -521,58 +567,46 @@ class Model:
             self.v_2,
             self.v_1
         ]
-        ceiling_vertex_list_clockwise_from_above = ceiling_vertex_list_ccw_from_above[::-1]
+        indoor_ceiling_vertex_list_clockwise_from_above = indoor_ceiling_vertex_list_ccw_from_above[::-1]
         self.surface_ceiling_conditioned_space = Surface(
             'Conditioned Space Ceiling',
             self.zone_indoor, SurfaceType.CEILING, self.construction_ceiling,
             BoundaryConditionType.OTHER_ZONE, self.zone_attic, 0.0, False, False,
-            self._add_height_to_vertices(ceiling_height, ceiling_vertex_list_ccw_from_above)
-        )
-        self.surface_ceiling_garage_space = Surface(
-            'Garage Ceiling',
-            self.zone_garage, SurfaceType.CEILING, self.construction_ceiling,
-            BoundaryConditionType.OTHER_ZONE, self.zone_attic, 0.0, False, False,
-            self._add_height_to_vertices(ceiling_height, [
-                self.v_10,
-                self.v_34,
-                self.v_35,
-                self.v_36,
-                self.v_19,
-                self.v_18,
-                self.v_17,
-                self.v_16,
-                self.v_15,
-                self.v_14,
-                self.v_13,
-                self.v_12,
-                self.v_11
-            ])
+            self._add_height_to_vertices(ceiling_height, indoor_ceiling_vertex_list_ccw_from_above)
         )
         self.surface_floor_conditioned_space = Surface(
             'Conditioned Space Floor',
             self.zone_indoor, SurfaceType.FLOOR, self.construction_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
-            self._add_height_to_vertices(0.0, ceiling_vertex_list_clockwise_from_above)
+            self._add_height_to_vertices(0.0, indoor_ceiling_vertex_list_clockwise_from_above)
+        )
+        garage_ceiling_vertex_list_ccw_from_above = [
+            self.v_10,
+            self.v_34,
+            self.v_35,
+            self.v_36,
+            self.v_19,
+            self.v_18,
+            self.v_17,
+            self.v_16,
+            self.v_15,
+            self.v_14,
+            self.v_13,
+            self.v_12,
+            self.v_11
+        ]
+        garage_ceiling_vertex_list_clockwise_from_above = garage_ceiling_vertex_list_ccw_from_above[::-1]
+        self.surface_ceiling_garage_space = Surface(
+            'Garage Ceiling',
+            self.zone_garage, SurfaceType.CEILING, self.construction_ceiling,
+            BoundaryConditionType.OTHER_ZONE, self.zone_attic, 0.0, False, False,
+            self._add_height_to_vertices(ceiling_height, garage_ceiling_vertex_list_ccw_from_above)
         )
         self.surface_floor_garage_space = Surface(
             'Garage Floor',
             self.zone_garage, SurfaceType.FLOOR, self.construction_garage_floor,
             BoundaryConditionType.GROUND, None, 1.0, False, False,
-            self._add_height_to_vertices(0, [
-                self.v_11,
-                self.v_12,
-                self.v_13,
-                self.v_14,
-                self.v_15,
-                self.v_16,
-                self.v_17,
-                self.v_18,
-                self.v_19,
-                self.v_36,
-                self.v_35,
-                self.v_34,
-                self.v_10
-            ])
+            self._add_height_to_vertices(0, garage_ceiling_vertex_list_clockwise_from_above)
         )
         self.surface_eave_1 = Surface(
             'Roof Overhang 1 Above Entry',
@@ -580,8 +614,8 @@ class Model:
             BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
             self._add_height_to_vertices(ceiling_height, [
                 self.v_39,
-                self.v_42,
-                self.v_43,
+                self.v_40,
+                self.v_41,
                 self.v_9,
                 self.v_8,
                 self.v_7,
@@ -596,14 +630,14 @@ class Model:
             self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
             BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
             self._add_height_to_vertices(ceiling_height, [
+                self.v_41,
+                self.v_42,
                 self.v_43,
                 self.v_44,
                 self.v_45,
                 self.v_46,
                 self.v_47,
-                self.v_49,
-                self.v_50,
-                self.v_51,
+                self.v_48,
                 self.v_16,
                 self.v_15,
                 self.v_14,
@@ -619,10 +653,12 @@ class Model:
             self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
             BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
             self._add_height_to_vertices(ceiling_height, [
+                self.v_48,
+                self.v_49,
+                self.v_50,
                 self.v_51,
                 self.v_52,
                 self.v_53,
-                self.v_54,
                 self.v_19,
                 self.v_18,
                 self.v_17,
@@ -634,11 +670,13 @@ class Model:
             self.zone_attic, SurfaceType.FLOOR, self.construction_soffit,
             BoundaryConditionType.OUTDOORS, None, 1.0, True, True,
             self._add_height_to_vertices(ceiling_height, [
+                self.v_53,
                 self.v_54,
                 self.v_55,
                 self.v_56,
                 self.v_57,
                 self.v_58,
+                self.v_28,
                 self.v_27,
                 self.v_26,
                 self.v_25,
@@ -660,7 +698,6 @@ class Model:
                 self.v_60,
                 self.v_61,
                 self.v_62,
-                self.v_63,
                 self.v_37,
                 self.v_38,
                 self.v_39,
@@ -671,169 +708,56 @@ class Model:
                 self.v_31,
                 self.v_30,
                 self.v_29,
-                self.v_28,
-                self.v_27
+                self.v_28
             ])
         )
-        fake_attic_ceiling_height = 6.2
-        self.surface_fake_attic_wall_1 = Surface(
-            'Fake Attic Wall 1',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_39, self.v_42, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_2 = Surface(
-            'Fake Attic Wall 2',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_42, self.v_43, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_3 = Surface(
-            'Fake Attic Wall 3',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_43, self.v_44, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_4 = Surface(
-            'Fake Attic Wall 4',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_44, self.v_45, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_5 = Surface(
-            'Fake Attic Wall 5',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_45, self.v_46, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_6 = Surface(
-            'Fake Attic Wall 6',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_46, self.v_47, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_7 = Surface(
-            'Fake Attic Wall 7',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_47, self.v_49, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_8 = Surface(
-            'Fake Attic Wall 8',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_49, self.v_50, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_9 = Surface(
-            'Fake Attic Wall 9',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_50, self.v_51, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_10 = Surface(
-            'Fake Attic Wall 10',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_51, self.v_52, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_11 = Surface(
-            'Fake Attic Wall 11',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_52, self.v_53, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_12 = Surface(
-            'Fake Attic Wall 12',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_53, self.v_54, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_13 = Surface(
-            'Fake Attic Wall 13',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_54, self.v_55, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_14 = Surface(
-            'Fake Attic Wall 14',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_55, self.v_56, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_15 = Surface(
-            'Fake Attic Wall 15',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_56, self.v_57, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_16 = Surface(
-            'Fake Attic Wall 16',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_57, self.v_58, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_17 = Surface(
-            'Fake Attic Wall 17',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_58, self.v_59, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_18 = Surface(
-            'Fake Attic Wall 18',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_59, self.v_60, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_19 = Surface(
-            'Fake Attic Wall 19',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_60, self.v_61, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_20 = Surface(
-            'Fake Attic Wall 20',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_61, self.v_62, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_21 = Surface(
-            'Fake Attic Wall 21',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_62, self.v_63, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_22 = Surface(
-            'Fake Attic Wall 22',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_63, self.v_37, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_23 = Surface(
-            'Fake Attic Wall 23',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_37, self.v_38, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_wall_24 = Surface(
-            'Fake Attic Wall 24',
-            self.zone_attic, SurfaceType.WALL, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.5, True, True,
-            self._build_fake_attic_wall_vertices(self.v_38, self.v_39, ceiling_height, fake_attic_ceiling_height))
-        self.surface_fake_attic_ceiling = Surface(
-            'Fake Attic Ceiling',
-            self.zone_attic, SurfaceType.ROOF, self.construction_roof,
-            BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
-            self._add_height_to_vertices(fake_attic_ceiling_height, [
-                # skip 48, 40
-                self.v_63,
-                self.v_62,
-                self.v_61,
-                self.v_60,
-                self.v_59,
-                self.v_58,
-                self.v_57,
-                self.v_56,
-                self.v_55,
-                self.v_54,
-                self.v_53,
-                self.v_52,
-                self.v_51,
-                self.v_50,
-                self.v_49,
-                self.v_47,
-                self.v_46,
-                self.v_45,
-                self.v_44,
-                self.v_43,
-                self.v_42,
-                self.v_41,
-                self.v_39,
-                self.v_38,
-                self.v_37
-            ])
-        )
+        all_eave_vertices_cw_from_above = [
+            self.v_37,
+            self.v_38,
+            self.v_39,
+            self.v_40,
+            self.v_41,
+            self.v_42,
+            self.v_43,
+            self.v_44,
+            self.v_45,
+            self.v_46,
+            self.v_47,
+            self.v_48,
+            self.v_49,
+            self.v_50,
+            self.v_51,
+            self.v_52,
+            self.v_53,
+            self.v_54,
+            self.v_55,
+            self.v_56,
+            self.v_57,
+            self.v_58,
+            self.v_59,
+            self.v_60,
+            self.v_61,
+            self.v_62,
+        ]
+        self.attic_roof_surfaces = []
+        for i, v in enumerate(all_eave_vertices_cw_from_above):
+            this_vertex = all_eave_vertices_cw_from_above[i]
+            if i < len(all_eave_vertices_cw_from_above) - 1:
+                next_vertex = all_eave_vertices_cw_from_above[i+1]
+            else:  # on the last one just point back to the first vertex
+                next_vertex = all_eave_vertices_cw_from_above[0]
+            self.attic_roof_surfaces.append(
+                Surface(
+                    f"Attic Surface {i}", self.zone_attic, SurfaceType.WALL, self.construction_roof,
+                    BoundaryConditionType.OUTDOORS, None, 0.0, True, True,
+                    self._build_fake_attic_wall_vertices(this_vertex, next_vertex, ceiling_height)
+                )
+            )
         all_surfaces = [
             self.surface_main_bath_exterior_wall_west,
-            self.surface_dax_exterior_wall_south,
-            self.surface_dax_exterior_wall_west,
-            self.surface_dax_exterior_wall_north,
+            self.surface_nw_bedroom_exterior_wall_south,
+            self.surface_nw_bedroom_exterior_wall_west,
+            self.surface_nw_bedroom_exterior_wall_north,
             self.surface_entry_exterior_wall,
             self.surface_office_exterior_wall_south,
             self.surface_office_exterior_wall_west,
@@ -848,7 +772,7 @@ class Model:
             self.surface_garage_exterior_wall_west_b_with_window,
             self.surface_garage_exterior_wall_north_a,
             self.surface_garage_exterior_wall_west_c,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self.surface_garage_exterior_wall_west_d,
             self.surface_garage_exterior_wall_north_c_with_large_garage_door,
             self.surface_garage_exterior_wall_east,
@@ -860,8 +784,8 @@ class Model:
             self.surface_living_exterior_wall_north,
             self.surface_living_exterior_wall_east_behind_chimney,
             self.surface_living_exterior_wall_south,
-            self.surface_living_and_gibson_exterior_wall_east,
-            self.surface_gibson_exterior_wall_south,
+            self.surface_living_and_se_bed_exterior_wall_east,
+            self.surface_se_bedroom_exterior_wall_south,
             self.surface_study_exterior_wall_east,
             self.surface_study_exterior_wall_south,
             self.surface_study_exterior_wall_west,
@@ -871,31 +795,7 @@ class Model:
             self.surface_floor_conditioned_space,
             self.surface_floor_garage_space,
             self.surface_eave_1, self.surface_eave_2, self.surface_eave_3, self.surface_eave_4, self.surface_eave_5,
-            self.surface_fake_attic_wall_1,
-            self.surface_fake_attic_wall_2,
-            self.surface_fake_attic_wall_3,
-            self.surface_fake_attic_wall_4,
-            self.surface_fake_attic_wall_5,
-            self.surface_fake_attic_wall_6,
-            self.surface_fake_attic_wall_7,
-            self.surface_fake_attic_wall_8,
-            self.surface_fake_attic_wall_9,
-            self.surface_fake_attic_wall_10,
-            self.surface_fake_attic_wall_11,
-            self.surface_fake_attic_wall_12,
-            self.surface_fake_attic_wall_13,
-            self.surface_fake_attic_wall_14,
-            self.surface_fake_attic_wall_15,
-            self.surface_fake_attic_wall_16,
-            self.surface_fake_attic_wall_17,
-            self.surface_fake_attic_wall_18,
-            self.surface_fake_attic_wall_19,
-            self.surface_fake_attic_wall_20,
-            self.surface_fake_attic_wall_21,
-            self.surface_fake_attic_wall_22,
-            self.surface_fake_attic_wall_23,
-            self.surface_fake_attic_wall_24,
-            self.surface_fake_attic_ceiling,
+            *self.attic_roof_surfaces
         ]
         for s in all_surfaces:
             bc_instance_name = ''
@@ -920,18 +820,18 @@ class Model:
             )
 
     def _setup_windows_and_doors(self):
-        # dax window
-        v_1 = Vertex2D('alpha', 27.806904, 48.657764)
-        v_2 = Vertex2D('beta', 28.331414, 49.467262)
+        # nw bedroom window
+        v_1 = self.v_63
+        v_2 = self.v_64
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_dax = Window(
-            'Dax Window', self.construction_window, self.surface_dax_exterior_wall_west,
+            'Dax Window', self.construction_window, self.surface_nw_bedroom_exterior_wall_west,
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # office window
-        v_1 = Vertex2D('gamma', 32.667194, 52.106576)
-        v_2 = Vertex2D('delta', 33.578038, 53.515006)
+        v_1 = self.v_67
+        v_2 = self.v_68
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_office = Window(
@@ -939,8 +839,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # laundry window
-        v_1 = Vertex2D('epsilon', 35.383978, 55.188866)
-        v_2 = Vertex2D('zeta', 35.88131, 55.958486)
+        v_1 = self.v_69
+        v_2 = self.v_70
         window_bottom = 1.2  # assumed
         window_top = 2.5  # assumed
         self.window_laundry = Window(
@@ -948,8 +848,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # garage window
-        v_1 = Vertex2D('eta', 36.946078, 60.320936)
-        v_2 = Vertex2D('theta', 37.442394, 61.089032)
+        v_1 = self.v_71
+        v_2 = self.v_72
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_garage = Window(
@@ -957,8 +857,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # master closet window
-        v_1 = Vertex2D('iota', 46.589442, 53.66639)
-        v_2 = Vertex2D('kappa', 45.953172, 52.68214)
+        v_1 = self.v_79
+        v_2 = self.v_80
         window_bottom = 2  # assumed
         window_top = 2.5  # assumed
         self.window_master_closet = Window(
@@ -966,8 +866,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # master bedroom window
-        v_1 = Vertex2D('lambda', 44.894246, 51.042062)
-        v_2 = Vertex2D('mu', 43.952922, 49.58969)
+        v_1 = self.v_81
+        v_2 = self.v_82
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_master_bedroom = Window(
@@ -975,8 +875,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # dining room window including door
-        v_1 = Vertex2D('nu', 43.289728, 47.388272)
-        v_2 = Vertex2D('xi', 42.2529, 45.791882)
+        v_1 = self.v_83
+        v_2 = self.v_84
         window_bottom = 0.05  # assumed
         window_top = 2.0  # assumed
         self.window_dining_and_door = Window(
@@ -984,8 +884,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # living room window northern
-        v_1 = Vertex2D('omicron', 41.030652, 45.069506)
-        v_2 = Vertex2D('pi', 40.547798, 44.322746)
+        v_1 = self.v_85
+        v_2 = self.v_86
         window_bottom = 0.67  # assumed
         window_top = 2.8  # assumed
         self.window_living_room_northern = Window(
@@ -994,27 +894,27 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # living room window southern
-        v_1 = Vertex2D('rho', 39.445438, 42.618152)
-        v_2 = Vertex2D('sigma', 38.962584, 41.869614)
+        v_1 = self.v_87
+        v_2 = self.v_88
         window_bottom = 0.67  # assumed
         window_top = 2.8  # assumed
         self.window_living_room_southern = Window(
             'Living Room Southern Window', self.construction_window,
-            self.surface_living_and_gibson_exterior_wall_east,
+            self.surface_living_and_se_bed_exterior_wall_east,
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
-        # gibs window
-        v_1 = Vertex2D('tau', 37.942266, 40.290242)
-        v_2 = Vertex2D('upsilon', 37.460428, 39.544498)
+        # SE Bedroom window
+        v_1 = self.v_89
+        v_2 = self.v_90
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_gibs = Window(
-            'Gibs Window', self.construction_window, self.surface_living_and_gibson_exterior_wall_east,
+            'Gibs Window', self.construction_window, self.surface_living_and_se_bed_exterior_wall_east,
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # study window
-        v_1 = Vertex2D('phi', 32.029908, 40.455596)
-        v_2 = Vertex2D('chi', 31.517336, 40.786558)
+        v_1 = self.v_91
+        v_2 = self.v_92
         window_bottom = 0.67  # assumed
         window_top = 2.5  # assumed
         self.window_study = Window(
@@ -1022,8 +922,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), True
         )
         # main bath window
-        v_1 = Vertex2D('psi', 29.49448, 42.941494)
-        v_2 = Vertex2D('omega', 28.512262, 43.574462)
+        v_1 = self.v_93
+        v_2 = self.v_94
         window_bottom = 2  # assumed
         window_top = 2.5  # assumed
         self.window_main_bath = Window(
@@ -1031,8 +931,8 @@ class Model:
             self._build_window_vertices(v_1, v_2, window_bottom, window_top), False
         )
         # entry door
-        v_1 = Vertex2D('!', 32.243522, 49.206912)
-        v_2 = Vertex2D('@', 32.74187, 49.9745)
+        v_1 = self.v_65
+        v_2 = self.v_66
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_entry = Door(
@@ -1040,28 +940,28 @@ class Model:
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
         # garage door small
-        v_1 = Vertex2D('#', 40.109648, 62.96279)
-        v_2 = Vertex2D('$', 42.114038, 61.671454)
+        v_1 = self.v_73
+        v_2 = self.v_74
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_garage_small = Door(
             'Small Garage Door', self.construction_garage_door,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
-        # garage man door
-        v_1 = Vertex2D('%', 42.582084, 61.3664)
-        v_2 = Vertex2D('^', 43.26636, 60.924694)
+        # garage person door
+        v_1 = self.v_75
+        v_2 = self.v_76
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
-        self.door_garage_man = Door(
-            'Garage Man Door', self.construction_door,
-            self.surface_garage_exterior_wall_north_b_with_small_garage_and_man_door,
+        self.door_garage_person = Door(
+            'Garage Person Door', self.construction_door,
+            self.surface_garage_exterior_wall_north_b_with_small_garage_and_person_door,
             self._build_window_vertices(v_1, v_2, door_bottom, door_top)
         )
         # garage door large
-        v_1 = Vertex2D('&', 46.325028, 63.785496)
-        v_2 = Vertex2D('*', 50.356516, 61.181996)
+        v_1 = self.v_77
+        v_2 = self.v_78
         door_bottom = 0.05  # assumed
         door_top = 2  # assumed
         self.door_garage_large = Door(
@@ -1118,10 +1018,11 @@ class Model:
                 '', c.control_type, '', c.set_point, '', '', c.shading_device.name,
                 c.slat_control_type, '', '', '', '', *[w.name for w in c.windows]
             )
+
         all_doors = [
             self.door_entry,
             self.door_garage_small,
-            self.door_garage_man,
+            self.door_garage_person,
             self.door_garage_large
         ]
         for d in all_doors:
@@ -1218,7 +1119,7 @@ class Model:
         self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
         self.schedule_equip_fridge = ScheduleConstant('FridgeSchedule', self.schedule_type_any, 0.3)  # runs part-time
         self.schedule_equip_other_kitchen = ScheduleConstant('OtherKitchenSchedule', self.schedule_type_any, 1.0)
-        self.schedule_water_heater_set_point = ScheduleConstant('WaterHeaterSetpoint', self.schedule_type_any, 41.0)
+        self.schedule_water_heater_set_point = ScheduleConstant('WaterHeaterSetpoint', self.schedule_type_any, 43.0)
         all_constant_schedules = [
             self.schedule_activity_dad, self.schedule_activity_mom,
             self.schedule_activity_gibs, self.schedule_activity_dax,
@@ -1382,9 +1283,9 @@ class Model:
         )
         self.schedule_pool_pump = ScheduleCompact(
             # Pool pump ran pretty much all summer
-            # Pool looked generally ready on May 5 but no confirmed of final day; assuming August 31 for now
+            # Pool looked generally ready by June 1 but no confirmed of final day; assuming August 31 for now
             'PoolPumpSchedule', self.schedule_type_frac, [
-                'Through: 05/04', 'For: AllDays', 'Until: 24:00', 0.0,
+                'Through: 05/31', 'For: AllDays', 'Until: 24:00', 0.0,
                 'Through: 08/31', 'For: AllDays', 'Until: 24:00', 1.0,
                 'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.0,
             ]
@@ -1552,7 +1453,8 @@ class Model:
         # Water side pumping power is 2 HP
         # Operates with 115 V power, rated at 11.5 A, which would be 1322.5 W
         # For now I will assume a power factor of 1, so we'll just use that value as the design value
-        self.pool_pump = ExteriorEquipment('PoolPump', 'Electricity', self.schedule_pool_pump, 1322.5)
+        power_factor = 0.7
+        self.pool_pump = ExteriorEquipment('PoolPump', 'Electricity', self.schedule_pool_pump, 1322.5 * power_factor)
         # No idea about the model of septic system sprinkler sump pump, assuming a moderate model from
         # septicsolutions.com, for now the Little Giant WE20
         # 20 GPM, 150 ft of head, 1/2 hp output, 115 V 10 A input.  Assuming power factor of 1, we get: 1150 W
@@ -1568,7 +1470,7 @@ class Model:
     def _water_use(self):  # water heater, water usage, etc
         # Water heater is a Bradford White RE340S6
         # DOE Rated storage volume is 36 gallons = 0.163659
-        # Heating setpoint scheduled above, at like 40ish degrees TODO: Verify this
+        # Heating setpoint scheduled above, not sure exactly, but assuming 43 C, so like 110 F
         # Dead band temperature difference: can't find any information, assuming 3
         # Max temperature limit: can't find any information, assuming 50 C (about 125 F)
         # Heating is provided by a single lower element at 5500/4000 W (240/208 V) -- assuming 4500 W for now
