@@ -993,7 +993,7 @@ class Model:
                 w.name, 'Window', w.construction.name, w.base_surface.name, '', 'AutoCalculate', '', '',
                 len(w.vertices), *vertex_list
             )
-        
+
         # create a controller for each zone, then add the appropriate windows
         main_zone_window_shade_control = WindowShadingControl(
             'MainZoneWindowBlindController', self.zone_indoor, 1, 'InteriorBlind'

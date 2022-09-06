@@ -64,4 +64,3 @@ if __name__ == "__main__":
     data_files_dir = this_file_dir / 'weather_underground'
     data_files_dir.mkdir(exist_ok=True)
     WeatherUnderground().prepare_one_year_of_data_files(2019, Path(data_files_dir / '2019.json'))
-

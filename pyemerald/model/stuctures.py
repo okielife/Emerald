@@ -303,4 +303,3 @@ class WaterHeaterMixed:
             # self.use_side_inlet_node, self.use_side_outlet_node,
             # self.use_side_effectiveness
         ]
-
