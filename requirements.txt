@@ -3,3 +3,4 @@ gnuplotlib
 numpy
 requests
 sphinx
+energyplus_api_helpers

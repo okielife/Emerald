@@ -102,7 +102,7 @@ class Model:
         self.idf_string += '\n'
 
     def _setup_settings(self):
-        self._add_idf_object('Version', 22.1)
+        self._add_idf_object('Version', 23.1)
         self._add_idf_object('TimeStep', 4)
         self._add_idf_object('Building', 'EmeraldWay', 0, 'Country', 0.5, 0.05, 'MinimalShadowing', 6, 2)
         self._add_idf_object('SimulationControl', 'No', 'No', 'No', 'No', 'Yes')
@@ -1623,7 +1623,8 @@ class Model:
         )
         self._add_idf_object(
             'Coil:Heating:DX:SingleSpeed',
-            'HeatingCoil', '', rated_heating_capacity_watts, cop_heating, sys_vol_flow, '',
+            'HeatingCoil', '', rated_heating_capacity_watts, cop_heating, sys_vol_flow,
+            '', '',  # 2017 and 2023 rated evaporator fan power per volume flow rate inputs
             'CoolingCoilOutlet', 'HeatingCoilOutlet',
             'HtgCapFT', 'HtgCapFF', 'HtgEirFT', 'HtgEirFF', 'HtgPLF', 'HtgDefrostEirFT',
             min_outdoor_temp_for_compressor, '', '', '', '', '', '', defrost_time_period
@@ -1658,7 +1659,8 @@ class Model:
         )
         self._add_idf_object(
             'Coil:Cooling:DX:SingleSpeed',
-            'CoolingCoil', '', rated_cooling_capacity_watts, rated_shr, cop_cooling, sys_vol_flow, '',
+            'CoolingCoil', '', rated_cooling_capacity_watts, rated_shr, cop_cooling, sys_vol_flow,
+            '', '',  # 2017 and 2023 rated evaporator fan power per volume flow rate inputs
             'FanOutlet', 'CoolingCoilOutlet', 'ClgCapFT', 'ClgCapFF', 'ClgEirFT', 'ClgEirFF', 'ClgPLF', 12.0,
             '', '', '', '', 'CoilCondInlet'
         )
