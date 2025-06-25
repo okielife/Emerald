@@ -30,6 +30,19 @@ from pyemerald.model.stuctures import (
 )
 
 
+# noinspection PyPep8Naming
+def Through(month: int, date: int) -> str:
+    return f"Through: {month:02}/{date:02}"
+
+# noinspection PyPep8Naming
+def For(day_types: str) -> str:
+    return f"For: {day_types}"
+
+# noinspection PyPep8Naming
+def Until(hour: int, minute: int) -> str:
+    return f"Until: {hour:02}:{minute:02}"
+
+
 class Model:
 
     def __init__(self):
@@ -135,7 +148,7 @@ class Model:
         self.material_wall_insulation = Material('R13Insulation', 0.09, 0.04, 45, 2020, 'https://www.greenspec.co.uk')
         self.material_gypsum = Material('Gypsum', 0.013, 0.16, 800, 837, 'https://researchgate.net')
         self.material_shingles = Material('Shingles', 0.01, 0.74, 2110, 920, 'Handbook 2017 - Asphalt')
-        self.material_ceiling_insulation = Material('R31Insulation', 0.21, 0.04, 45, 2020, 'www.greenspec.co.uk')
+        self.material_ceiling_insulation = Material('R31Insulation', 0.3, 0.04, 45, 2020, 'www.greenspec.co.uk')
         self.material_concrete = Material('6InchConcrete', 0.15, 1.73, 2242, 837, 'In IDF data-sets')
         self.material_wood_floor = Material('WoodFlooring', 0.03, 0.17, 750, 2390, 'Handbook 2017 - Assuming Oak')
         self.material_garage_door = Material('GarageDoorMetal', 0.005, 167, 2700, 896, 'Assuming Aluminum')
@@ -1083,6 +1096,54 @@ class Model:
         ]
         self.output_meters = [
             OutputMeter('Electricity:Facility'),
+            OutputMeter('Electricity:Facility'),
+            OutputMeter('ExteriorEquipment:Electricity'),
+            OutputMeter('General:ExteriorEquipment:Electricity'),
+            OutputMeter('Electricity:Building'),
+            OutputMeter('Electricity:Zone:INDOOR'),
+            OutputMeter('Electricity:SpaceType:GENERAL'),
+            OutputMeter('InteriorLights:Electricity'),
+            OutputMeter('InteriorLights:Electricity:Zone:INDOOR'),
+            OutputMeter('InteriorLights:Electricity:SpaceType:GENERAL'),
+            OutputMeter('GeneralLights:InteriorLights:Electricity'),
+            OutputMeter('GeneralLights:InteriorLights:Electricity:Zone:INDOOR'),
+            OutputMeter('GeneralLights:InteriorLights:Electricity:SpaceType:GENERAL'),
+            OutputMeter('InteriorEquipment:Electricity'),
+            OutputMeter('InteriorEquipment:Electricity:Zone:INDOOR'),
+            OutputMeter('InteriorEquipment:Electricity:SpaceType:GENERAL'),
+            OutputMeter('General:InteriorEquipment:Electricity'),
+            OutputMeter('General:InteriorEquipment:Electricity:Zone:INDOOR'),
+            OutputMeter('General:InteriorEquipment:Electricity:SpaceType:GENERAL'),
+            OutputMeter('EnergyTransfer:Facility'),
+            OutputMeter('EnergyTransfer:Building'),
+            OutputMeter('EnergyTransfer:Zone:INDOOR'),
+            OutputMeter('Heating:EnergyTransfer'),
+            OutputMeter('Heating:EnergyTransfer:Zone:INDOOR'),
+            OutputMeter('General:Heating:EnergyTransfer'),
+            OutputMeter('General:Heating:EnergyTransfer:Zone:INDOOR'),
+            OutputMeter('Cooling:EnergyTransfer'),
+            OutputMeter('Cooling:EnergyTransfer:Zone:INDOOR'),
+            OutputMeter('General:Cooling:EnergyTransfer'),
+            OutputMeter('General:Cooling:EnergyTransfer:Zone:INDOOR'),
+            OutputMeter('Electricity:HVAC'),
+            OutputMeter('Fans:Electricity'),
+            OutputMeter('General:Fans:Electricity'),
+            OutputMeter('EnergyTransfer:HVAC'),
+            OutputMeter('CoolingCoils:EnergyTransfer'),
+            OutputMeter('Cooling:Electricity'),
+            OutputMeter('General:Cooling:Electricity'),
+            OutputMeter('HeatingCoils:EnergyTransfer'),
+            OutputMeter('Heating:Electricity'),
+            OutputMeter('General:Heating:Electricity'),
+            OutputMeter('Electricity:Plant'),
+            OutputMeter('WaterSystems:Electricity'),
+            OutputMeter('Water Heater:WaterSystems:Electricity'),
+            OutputMeter('ElectricityPurchased:Facility'),
+            OutputMeter('ElectricityPurchased:Plant'),
+            OutputMeter('ElectricityNet:Facility'),
+            OutputMeter('ElectricityNet:Plant'),
+            OutputMeter('Cogeneration:ElectricityNet'),
+            OutputMeter('General:Cogeneration:ElectricityNet')
         ]
         # write IDF
         for ov in self.output_variables:
@@ -1109,14 +1170,14 @@ class Model:
             if s.max != -1:
                 max_string = str(s.max)
             self._add_idf_object('ScheduleTypeLimits', s.name, min_string, max_string, s.discrete_or_continuous)
-        self.schedule_activity_dad = ScheduleConstant('ScheduleDadActivity', self.schedule_type_any, 115)
-        self.schedule_activity_mom = ScheduleConstant('ScheduleMomActivity', self.schedule_type_any, 100)
-        self.schedule_activity_gibs = ScheduleConstant('ScheduleGibsActivity', self.schedule_type_any, 105)
-        self.schedule_activity_dax = ScheduleConstant('ScheduleDaxActivity', self.schedule_type_any, 85)
+        self.schedule_activity_dad = ScheduleConstant('ScheduleDadActivity', self.schedule_type_any, 80)
+        self.schedule_activity_mom = ScheduleConstant('ScheduleMomActivity', self.schedule_type_any, 80)
+        self.schedule_activity_gibs = ScheduleConstant('ScheduleGibsActivity', self.schedule_type_any, 70)
+        self.schedule_activity_dax = ScheduleConstant('ScheduleDaxActivity', self.schedule_type_any, 60)
         self.schedule_equipment_office_computers = ScheduleConstant('OfficeCompSchedule', self.schedule_type_frac, 1.0)
         self.schedule_dual_set_point = ScheduleConstant('ScheduleDualSetPoint', self.schedule_type_any, 4)
-        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 22.22)
-        self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 23.9)
+        self.schedule_heating_set_point = ScheduleConstant('HeatingSetpoint', self.schedule_type_any, 22.3)
+        # self.schedule_cooling_set_point = ScheduleConstant('CoolingSetpoint', self.schedule_type_any, 25)
         self.schedule_equip_fridge = ScheduleConstant('FridgeSchedule', self.schedule_type_any, 0.3)  # runs part-time
         self.schedule_equip_other_kitchen = ScheduleConstant('OtherKitchenSchedule', self.schedule_type_any, 1.0)
         self.schedule_water_heater_set_point = ScheduleConstant('WaterHeaterSetpoint', self.schedule_type_any, 43.0)
@@ -1124,11 +1185,21 @@ class Model:
             self.schedule_activity_dad, self.schedule_activity_mom,
             self.schedule_activity_gibs, self.schedule_activity_dax,
             self.schedule_equipment_office_computers,
-            self.schedule_dual_set_point, self.schedule_heating_set_point, self.schedule_cooling_set_point,
+            self.schedule_dual_set_point, self.schedule_heating_set_point,
             self.schedule_equip_fridge, self.schedule_equip_other_kitchen, self.schedule_water_heater_set_point,
         ]
         for s in all_constant_schedules:
             self._add_idf_object('Schedule:Constant', s.name, s.type_limits.name, s.value)
+        self.schedule_cooling_set_point = ScheduleCompact(
+            'CoolingSetpoint', self.schedule_type_any,
+            [
+                Through(3, 31), For('AllDays'), Until(24, 0), 23.9,
+                Through(4, 15), For('AllDays'), Until(24, 0), 25,
+                Through(6, 30), For('AllDays'), Until(24, 0), 23.9,
+                Through(8, 31), For('AllDays'), Until(24, 0), 23.9,
+                Through(12, 31), For('AllDays'), Until(24, 0), 24.5,
+            ]
+        )
         self.schedule_infiltration = ScheduleCompact('InfiltrationSchedule', self.schedule_type_frac, [
             'Through: 09/30', 'For: AllDays', 'Until: 24:00', 1.0,
             'Through: 12/31', 'For: AllDays', 'Until: 24:00', 1.8  # fireplace was open a TON this winter, lots of OA
@@ -1285,7 +1356,7 @@ class Model:
             # Pool pump ran pretty much all summer
             # Pool looked generally ready by June 1 but no confirmed of final day; assuming August 31 for now
             'PoolPumpSchedule', self.schedule_type_frac, [
-                'Through: 05/31', 'For: AllDays', 'Until: 24:00', 0.0,
+                'Through: 06/20', 'For: AllDays', 'Until: 24:00', 0.0,
                 'Through: 08/31', 'For: AllDays', 'Until: 24:00', 1.0,
                 'Through: 12/31', 'For: AllDays', 'Until: 24:00', 0.0,
             ]
@@ -1308,7 +1379,7 @@ class Model:
             ]
         )
         all_compact_schedules = [
-            self.schedule_infiltration,
+            self.schedule_infiltration, self.schedule_cooling_set_point,
             self.schedule_occupancy_dad, self.schedule_occupancy_mom,
             self.schedule_occupancy_gibs, self.schedule_occupancy_dax,
             self.schedule_lights_dax, self.schedule_lights_gibs,
@@ -1453,7 +1524,7 @@ class Model:
         # Water side pumping power is 2 HP
         # Operates with 115 V power, rated at 11.5 A, which would be 1322.5 W
         # For now I will assume a power factor of 1, so we'll just use that value as the design value
-        power_factor = 0.7
+        power_factor = 0.6
         self.pool_pump = ExteriorEquipment('PoolPump', 'Electricity', self.schedule_pool_pump, 1322.5 * power_factor)
         # No idea about the model of septic system sprinkler sump pump, assuming a moderate model from
         # septicsolutions.com, for now the Little Giant WE20
