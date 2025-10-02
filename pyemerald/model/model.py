@@ -34,9 +34,11 @@ from pyemerald.model.stuctures import (
 def Through(month: int, date: int) -> str:
     return f"Through: {month:02}/{date:02}"
 
+
 # noinspection PyPep8Naming
 def For(day_types: str) -> str:
     return f"For: {day_types}"
+
 
 # noinspection PyPep8Naming
 def Until(hour: int, minute: int) -> str:
